@@ -54,7 +54,7 @@
                                     ${status.count}
                                 </td>
                                 <td>
-                                    <a href="/ProjetPooCamions/Controleur?action=detailVehicule&routeNumber=${vehicule}"> <c:out value="${vehicule}"/></a><br/>
+                                    <a href="/ProjetPooCamions/Controleur?action=detailVehicule&routeNumber=${vehicule}&idSolution=${idSolution}"> <c:out value="${vehicule}"/></a><br/>
                                 </td>
                             </tr>
                         </c:forEach>
