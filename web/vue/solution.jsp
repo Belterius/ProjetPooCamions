@@ -14,7 +14,7 @@
         </c:if>
         <c:forEach var="vehicule" items="${requestScope.myVehicules}">
             <li> 
-                <a href="/ProjetPooWeb/Controleur?action=detailVehicule&routeNumber=${vehicule}"> <c:out value="Vehicule numero : ${vehicule}"/></a><br/>
+                <a href="/ProjetPooCamions/Controleur?action=detailVehicule&routeNumber=${vehicule}&idSolution=${idSolution}"> <c:out value="Vehicule numero : ${vehicule}"/></a><br/>
             </li>
             </br>
         </c:forEach>
