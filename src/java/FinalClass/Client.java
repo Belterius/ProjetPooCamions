@@ -5,6 +5,7 @@
  */
 package FinalClass;
 
+import Parser.FleetParser;
 import java.io.Serializable;
 import javax.persistence.Basic;
 import javax.persistence.Column;
@@ -76,6 +77,14 @@ public class Client extends LocationCSV implements Serializable{
 
     public int getService_time() {
         return service_time;
+    }
+    
+    /**
+     * A t on besoin d'un double camion ou non
+     * @return 
+     */
+    public Boolean needDoubleTruck(){
+        return (this.quantity > FleetParser.getCapacite());
     }
     
 }

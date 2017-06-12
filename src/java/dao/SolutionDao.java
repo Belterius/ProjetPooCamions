@@ -15,4 +15,6 @@ import metier.Solution;
 public interface SolutionDao extends Dao<Solution> {
     
     public List<Solution> findBySolutionIndex(int solutionIndexId);
+    public List<Solution> findBySolutionIndexAndVehicule(int solutionIndexId,int solutionVehiculeId);
+    public List<Solution> findBySolutionIndexAndVehicule(int solutionIndexId,String solutionVehiculeId);
 }

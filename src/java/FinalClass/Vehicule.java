@@ -6,12 +6,16 @@
 package FinalClass;
 
 import Parser.DistanceTimesDataParser;
+import Parser.FleetParser;
 import Parser.LocationParser;
+import Parser.SolutionParser;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.persistence.Basic;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
@@ -30,6 +34,7 @@ import javax.xml.bind.annotation.XmlRootElement;
 import metier.DistanceTimesDataCSV;
 import metier.FleetCSV;
 import metier.LocationCSV;
+import metier.Solution;
 
 /**
  *
@@ -155,35 +160,78 @@ public class Vehicule implements Serializable {
         setCurrentEmplacement(this.myDepot);
         return true;
     }
+    
     /**
      * Livre un client
      * @param destination
-     * @param swapAction
+     * @param listClientALivrer
+     * @param checkRentability
      */
-    public boolean livrer(Client destination, List<Client> listClient){
+    public boolean livrer(Client destination, List<Client> listClient, boolean checkRentability){
         //Vérifie si le client peut etre livré avec un double remorque ou non ?
         if(destination.getIsTrainPossible()== 0 && remorque_2 != null &&remorque_2.isAttached){
 //            throw new Error("Impossible de livrer ce client avec un semi remorque");
             return false;
         }
-        if(!enoughtTime(destination)){//enought time to deliver & comeback
+        if(!enoughTime(destination)){//enought time to deliver & comeback
             return false;
         }
         float totalQuantity = remorque_1.getQuantityLeft() + (remorque_2 != null && remorque_2.isAttached ? remorque_2.getQuantityLeft() : 0);
         if(destination.getQuantity() > totalQuantity){//enought quantity to deliver at once
             return false;
         }
+        
+        //Est-ce que c'est rentable de livrer le client lors de cette tournée ?
+        if(checkRentability && this.actionRealisees.size() > 2 && isRentableLivrerClient(destination)){
+            return false;
+        }
+        
         Action delivery = new Action(currentEmplacement, destination, remorque_1, remorque_2, "NONE");
         ajouterAction(delivery);
         timeSpent += delivery.timeSpent;
         setCurrentEmplacement(destination);
         
-        //Enlever le client de la liste des clients à livrer
-//        LocationParser.myClients.remove(destination);
-        listClient.remove(destination);
+        //Enlever le client de la liste des clients à livrer   
+        
+        if(LocationParser.myClients.equals(listClient)){
+            listClient.remove(destination);
+        }else{
+            LocationParser.myClients.remove(destination);
+            listClient.remove(destination);
+        }
+        
+//        System.out.println("Livraison !");
+//        System.out.println("Restant : " + LocationParser.myClients.size());
         return true;
     }
     
+    
+    /**
+     * Livre un client
+     * @param destination
+     * @param listClientALivrer
+     */
+    public boolean livrerWithoutCheckRentability(Client destination){
+        //Vérifie si le client peut etre livré avec un double remorque ou non ?
+        if(destination.getIsTrainPossible()== 0 && remorque_2 != null &&remorque_2.isAttached){
+//            throw new Error("Impossible de livrer ce client avec un semi remorque");
+            return false;
+        }
+        if(!enoughTime(destination)){//enought time to deliver & comeback
+            return false;
+        }
+        float totalQuantity = remorque_1.getQuantityLeft() + (remorque_2 != null && remorque_2.isAttached ? remorque_2.getQuantityLeft() : 0);
+        if(destination.getQuantity() > totalQuantity){//enought quantity to deliver at once
+            return false;
+        }
+        
+        Action delivery = new Action(currentEmplacement, destination, remorque_1, remorque_2, "NONE");
+        ajouterAction(delivery);
+        timeSpent += delivery.timeSpent;
+        setCurrentEmplacement(destination);
+        
+        return true;
+    }    
     
     public void park(LocationCSV destination){
         if(!destination.getLocation_type().equals("SWAP_LOCATION")){
@@ -234,7 +282,13 @@ public class Vehicule implements Serializable {
         this.park(destination);
         //TODO ajouter le timeSpent exchange
     }
-     private boolean enoughtTime(LocationCSV destination){
+    
+    /**
+     * Est-ce que l'on a assez de temps ?
+     * @param destination
+     * @return 
+     */
+    private boolean enoughTime(LocationCSV destination){
        int i =2*myDepot.getCoord().getId()+1;
        int j = destination.getCoord().getId();
        
@@ -245,9 +299,34 @@ public class Vehicule implements Serializable {
        }
             return timeSpent + DistanceTimesDataCSV.matrix[i][j] + DistanceTimesDataCSV.matrix[i2][j2] <= FleetCSV.getOperating_time();
    }
+    /**
+     * Récupère la distance entre deux locations
+     * @param origine
+     * @param destination
+     * @return 
+     */
+    private int getDistanceBetweenTwoLocation(LocationCSV origine, LocationCSV destination){
+        int i = 2*origine.getCoord().getId()+1;
+        int j = destination.getCoord().getId();
+        
+        return DistanceTimesDataCSV.matrix[i][j];
+    }
+    
+    /**
+     * Récupère le temps de parcours entre deux locations
+     * @param origine
+     * @param destination
+     * @return 
+     */
+    private int getTempsBetweenTwoLocation(LocationCSV origine, LocationCSV destination){
+        int i = 2*origine.getCoord().getId();
+        int j = destination.getCoord().getId();
+        
+        return DistanceTimesDataCSV.matrix[i][j];
+    }
    
     /**
-     * Cherche le client le plus loin par rapport à un point donnée et va le livrer
+     * Cherche le client le plus loin par rapport à un point donnée
      * @param listeClient
      * @param pointDeDepart
      * @return 
@@ -278,7 +357,7 @@ public class Vehicule implements Serializable {
     }
     
     /**
-     * Cherche le client le plus proche par rapport à un point donnée et va le livrer
+     * Cherche le client le plus proche par rapport à un point donnée
      * @param listeClient
      * @param pointDeDepart
      * @return 
@@ -316,7 +395,7 @@ public class Vehicule implements Serializable {
     public Boolean chercherPlusLoinParRapportAuCamionEtLivrer(List<Client> listeClient){
         
         for(Client c : chercherClientPlusLoin(listeClient, this.currentEmplacement)){
-            if(livrer(c, listeClient)){
+            if(livrer(c, listeClient, false)){
                 return true;
             }
         }
@@ -332,7 +411,7 @@ public class Vehicule implements Serializable {
     public Boolean chercherPlusProcheParRapportAuCamionEtLivrer(List<Client> listeClient){
         
         for(Client c : chercherClientPlusProche(listeClient, this.currentEmplacement)){
-            if(livrer(c, listeClient)){
+            if(livrer(c, listeClient, true)){
                 return true;
             }
         }
@@ -349,7 +428,7 @@ public class Vehicule implements Serializable {
     public Boolean chercherPlusLoinParRapportPermiereDestinationEtLivrer(List<Client> listeClient){
         
         for(Client c : chercherClientPlusLoin(listeClient, this.getActionRealisees().get(1).destinationLocation)){
-            if(livrer(c, listeClient)){
+            if(livrer(c, listeClient, false)){
                 return true;
             }
         }
@@ -363,13 +442,15 @@ public class Vehicule implements Serializable {
      * @return 
      */
     public Boolean chercherPlusProcheParRapportPermiereDestinationEtLivrer(List<Client> listeClient){
-        
-        for(Client c : chercherClientPlusProche(listeClient, this.getActionRealisees().get(1).destinationLocation)){
-            if(livrer(c, listeClient)){
+        chercherClientPlusProche(listeClient, this.getActionRealisees().get(1).destinationLocation);
+        int max = listeClient.size();
+        int i = 0;
+        while(i < max){
+            if(livrer(listeClient.get(i), listeClient, true)){
                 return true;
             }
+            i++;  
         }
-        
         return false;
     }
     
@@ -381,7 +462,7 @@ public class Vehicule implements Serializable {
     public Boolean chercherPlusLoinParRapportDepotEtLivrer(List<Client> listeClient){
         
         for(Client c : chercherClientPlusLoin(listeClient, this.getActionRealisees().get(0).destinationLocation)){
-            if(livrer(c, listeClient)){
+            if(livrer(c, listeClient, false)){
                 return true;
             }
         }
@@ -397,12 +478,28 @@ public class Vehicule implements Serializable {
     public Boolean chercherPlusProcheParRapportDepotEtLivrer(List<Client> listeClient){
         
         for(Client c : chercherClientPlusProche(listeClient, this.getActionRealisees().get(0).destinationLocation)){
-            if(livrer(c, listeClient)){
+            if(livrer(c, listeClient, false)){
                 return true;
             }
         }
         return false;
     }
+    
+    /**
+     * Cherche le client le plus proche par rapport au client de reference et va le livrer
+     * @param listeClient
+     * @return 
+     */
+    public Boolean chercherPlusProcheParRapportPlusLoinDestinationEtLivrer(List<Client> listeClient, Client clientReference){
+        
+        for(Client c : chercherClientPlusProche(listeClient, clientReference)){
+            if(livrer(c, listeClient, true)){
+                return true;
+            }
+        }
+        return false;
+    }
+    
     
     public void ordonnerTournée(boolean doubleRemorque, float sizeRemorque){
         
@@ -426,7 +523,7 @@ public class Vehicule implements Serializable {
             //Inutile pour l'instant car on prend que des clients, 
             //mais pourrait être utile avec des swap
             if(locationAComparer instanceof Client){
-                position = distancePointDroite(myDepot,plusLoinPoint,locationAComparer);
+                position = distancePointDroite(plusLoinPoint,locationAComparer);
                 if(position < 0 ){
                     //Droite
                     listClientDroite.add((Client)locationAComparer);
@@ -452,23 +549,40 @@ public class Vehicule implements Serializable {
     
     /**
      * Retourne la distance d'un point par rapport à une droite
-     * @param a
      * @param b
      * @param c
      * @return Si <0 c'est à droite ; Si >0 c'est à gauche ; Sinon c'est sur la droite
      */
-    private float distancePointDroite(LocationCSV a, LocationCSV b, LocationCSV c){
-        float xA = a.getCoord().getX();
+    public float distancePointDroite(LocationCSV b, LocationCSV c){
+        float xA = myDepot.getCoord().getX();
         float xB = b.getCoord().getX();
         float xC = c.getCoord().getX();
         
-        float yA = a.getCoord().getY();
+        float yA = myDepot.getCoord().getY();
         float yB = b.getCoord().getY();
         float yC = c.getCoord().getY();
         
         return (xB - xA) * (yC - yA) - (yB - yA) * (xC - xA);
     }
         
+    /**
+     * Cherche le client le plus loin par rapport au depot et le retourne
+     * @param listeClient
+     * @return List<Client> Triée par le plus loin d'abord
+     */
+    public Client trierPlusLoinParRapportDepot(List<Client> listeClient){
+        return chercherClientPlusLoin(listeClient, myDepot).get(0);        
+    }
+//    
+//    /**
+//     * Cherche le client le plus proche par rapport au depot et le retourne
+//     * @param listeClient
+//     * @return List<Client> Triée par le plus proche d'abord
+//     */
+//    public void trierPlusProcheParRapportDepotEtLivrer(List<Client> listeClient){
+//        chercherClientPlusProche(listeClient, myDepot);        
+//    }
+    
     /**
      * Ajoute une action à la liste des déplacements / actions effectués par le véhicule
      * @param action
@@ -478,4 +592,92 @@ public class Vehicule implements Serializable {
         actionRealisees.add(action);
         return true;
     }
+    
+    private Boolean isRentableLivrerClient(Client client){
+        
+        Vehicule testNewVehicule = new Vehicule(myDepot, client.needDoubleTruck(), FleetParser.getCapacite());
+        testNewVehicule.livrerWithoutCheckRentability(client);
+        testNewVehicule.retour();
+        //On a remove des clients à livrer dans le livrer (durant le test), on doit donc
+        //le remettre pour la suite
+//        LocationParser.myClients.add(client);
+        
+        double resultatNewVehicule = SolutionParser.getResultatForOneVehicule(testNewVehicule);
+        
+//        double resultatBackDirectToDepot = getAmountToBackToDepot();
+//        double resultatDeliverAndBackToDepot = getAmountToDeliverClientAndGoBackToDepot(client) ;
+//        double resultatKeepThisTournee =  resultatDeliverAndBackToDepot - resultatBackDirectToDepot;
+        
+        
+        //Si service
+        //Distance
+        int distanceCurrentLocationToDestination = getDistanceBetweenTwoLocation(currentEmplacement, client);
+        int distanceDestinationToDepot = getDistanceBetweenTwoLocation(client, myDepot);
+        int distanceTotal = distanceCurrentLocationToDestination + distanceDestinationToDepot;
+        double prixDistanceTotal =  distanceTotal * FleetParser.getCoutDistanceTruck();
+        if(this.remorque_2 != null){
+            prixDistanceTotal += distanceTotal * FleetParser.getCoutDistanceTruck();
+        }
+        
+        //Temps
+        int tempsCurrentLocationToDestination = getTempsBetweenTwoLocation(currentEmplacement, client);
+        int tempsDestinationToDepot = getTempsBetweenTwoLocation(client, myDepot);
+        int tempsService = client.getService_time();
+        int tempsTotal = tempsCurrentLocationToDestination + tempsDestinationToDepot + tempsService;
+        double prixTempsTotal =  tempsTotal * FleetParser.getCoutDuree();
+        
+        //Si retour direct
+        //Distance
+        int distanceRetourDirectDepot = getDistanceBetweenTwoLocation(currentEmplacement, myDepot);
+        double prixDistanceRetourDirectDepot = distanceRetourDirectDepot * FleetParser.getCoutDistanceTruck();
+        if(this.remorque_2 != null){
+            prixDistanceRetourDirectDepot += distanceRetourDirectDepot * FleetParser.getCoutDistanceTruck();
+        }
+        
+        //Temps 
+        int tempsRetourDirectDepot = getTempsBetweenTwoLocation(currentEmplacement, myDepot);
+        double prixTempsRetourDirectDepot = tempsRetourDirectDepot * FleetParser.getCoutDuree();
+        
+        return resultatNewVehicule  + prixDistanceRetourDirectDepot +  prixTempsRetourDirectDepot< prixDistanceTotal + prixTempsTotal ;
+    }
+    
+    /**
+     * Théorie : calcul le cout de la tournée si on va livrer le client et on retourne ensuite au depot
+     * @param clientToDeliver
+     * @return 
+     */
+     private double getAmountToDeliverClientAndGoBackToDepot(Client clientToDeliver){
+        try {
+            Vehicule v = (Vehicule) this.clone();
+            v.livrerWithoutCheckRentability(clientToDeliver);
+            v.retour();
+            return SolutionParser.getResultatForOneVehicule(v);
+        } catch (CloneNotSupportedException ex) {
+            Logger.getLogger(Vehicule.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        throw new Error("Impossible de calculer le prix si on veut finir tout de suite la tournée");
+        
+        
+    
+    }
+    
+    /**
+     * Théorie : calcul le cout de la tournée si on retourne tout de suite au dépot
+     * @return 
+     */
+    private double getAmountToBackToDepot(){
+        try {
+            Vehicule v = (Vehicule) this.clone();
+            v.retour();
+            
+            return SolutionParser.getResultatForOneVehicule(v);
+        } catch (CloneNotSupportedException ex) {
+            Logger.getLogger(Vehicule.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        throw new Error("Impossible de calculer le prix si on veut finir tout de suite la tournée");
+    }
+    
+    
 }

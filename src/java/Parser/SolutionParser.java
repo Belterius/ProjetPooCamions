@@ -21,7 +21,7 @@ import metier.Solution;
  * @author belterius
  */
 public class SolutionParser {
-    List<Vehicule> myVehicules;
+    public List<Vehicule> myVehicules;
     public List<Solution> mySolutions;
     
     public SolutionParser(){
@@ -121,6 +121,86 @@ public class SolutionParser {
                 Logger.getLogger(SolutionParser.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
+    }
+        
+    public static float getResultat(List<Vehicule> listVehicule) {
+        
+        float totalMontant = 0;
+        
+        int nbSwap = 0;
+        int nbTruck = 0;
+        int distanceTruck = 0;
+        int distanceSemiTrailer = 0;
+        int duree = 0;
+        boolean doubleCamion = false;
+        for(Vehicule v : listVehicule){
+            nbTruck++;
+            
+            doubleCamion = v.getRemorque_2() != null;
+            if(doubleCamion){
+                nbSwap++;
+            }
+            
+            for(Action a : v.getActionRealisees()){
+                distanceTruck += a.getDistanceSpent();
+                if(doubleCamion){
+                    distanceSemiTrailer +=  a.getDistanceSpent();
+                }
+                duree += a.getTimeSpent();
+            }
+            
+        }
+  
+        return getTotalMontant(nbSwap,nbTruck,distanceTruck,distanceSemiTrailer,duree );
+    }
+    
+    public static float getResultatForOneVehicule(Vehicule vehicule){
+               
+        float totalMontant = 0;
+        
+        int nbSwap = 0;
+        int nbTruck = 1;
+        int distanceTruck = 0;
+        int distanceSemiTrailer = 0;
+        int duree = 0;
+        boolean doubleCamion = false;
+            
+        doubleCamion = vehicule.getRemorque_2() != null;
+        if(doubleCamion){
+            nbSwap++;
+        }
+
+        for(Action a : vehicule.getActionRealisees()){
+            distanceTruck += a.getDistanceSpent();
+            if(doubleCamion){
+                distanceSemiTrailer +=  a.getDistanceSpent();
+            }
+            duree += a.getTimeSpent();
+        }
+        
+        return getTotalMontant(nbSwap,nbTruck,distanceTruck,distanceSemiTrailer,duree );
+    }
+    
+    /**
+     * Calcul le coût total en fonction des paramètres
+     * @param nbSwap
+     * @param nbTruck
+     * @param distanceTruck
+     * @param distanceSemiTrailer
+     * @param duree
+     * @return 
+     */
+    private static float getTotalMontant(int nbSwap, int nbTruck, int distanceTruck, int distanceSemiTrailer, int duree){
+        float costUsageSwap = nbSwap * FleetParser.getCoutUsageFixeSwap(); // cout fixe swap
+        float costUsageTruck = nbTruck * FleetParser.getCoutUsageFixeTruck();// cout fixe truck
+        float costDistanceTruck = distanceTruck * FleetParser.getCoutDistanceTruck();
+        float costDistanceSemiTrailer = distanceSemiTrailer * FleetParser.getCoutDistanceSemiTrailer();
+        float costDuree = duree * FleetParser.getCoutDuree();
+        
+        float totalMontant = costUsageSwap + costUsageTruck + costDistanceTruck + costDistanceSemiTrailer + costDuree;
+//        System.out.println("Total : " + totalMontant);
+        
+        return totalMontant;
     }
     
 }
