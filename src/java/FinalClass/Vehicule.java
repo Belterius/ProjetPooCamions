@@ -204,7 +204,35 @@ public class Vehicule implements Serializable {
 //        System.out.println("Restant : " + LocationParser.myClients.size());
         return true;
     }
-    
+        public boolean livrerNoRetrait(Client destination, boolean checkRentability){
+        //Vérifie si le client peut etre livré avec un double remorque ou non ?
+        if(destination.getIsTrainPossible()== 0 && remorque_2 != null &&remorque_2.isAttached){
+//            throw new Error("Impossible de livrer ce client avec un semi remorque");
+            return false;
+        }
+        if(!enoughTime(destination)){//enought time to deliver & comeback
+            return false;
+        }
+        float totalQuantity = remorque_1.getQuantityLeft() + (remorque_2 != null && remorque_2.isAttached ? remorque_2.getQuantityLeft() : 0);
+        if(destination.getQuantity() > totalQuantity){//enought quantity to deliver at once
+            return false;
+        }
+        
+        //Est-ce que c'est rentable de livrer le client lors de cette tournée ?
+        if(checkRentability && this.actionRealisees.size() > 2 && isRentableLivrerClient(destination)){
+            return false;
+        }
+        
+        Action delivery = new Action(currentEmplacement, destination, remorque_1, remorque_2, "NONE");
+        ajouterAction(delivery);
+        timeSpent += delivery.timeSpent;
+        setCurrentEmplacement(destination);
+        
+        
+//        System.out.println("Livraison !");
+//        System.out.println("Restant : " + LocationParser.myClients.size());
+        return true;
+    }
     
     /**
      * Livre un client
@@ -453,6 +481,20 @@ public class Vehicule implements Serializable {
         }
         return false;
     }
+    
+    public Boolean livrerDanslOrdre(List<Client> listeClient){
+        int max = listeClient.size();
+        int i = 0;
+        while(i < max){
+            if(livrer(listeClient.get(i), listeClient, true)){
+                return true;
+            }
+            i++;  
+        }
+        return false;
+    }
+    
+    
     
     /**
      * Cherche le client le plus loin par rapport au depot

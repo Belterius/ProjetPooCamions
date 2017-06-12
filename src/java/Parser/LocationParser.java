@@ -42,6 +42,11 @@ public class LocationParser {
     public List<Client> getMyClients() {
         return myClients;
     }
+
+    public static void setMyClients(List<Client> myClients) {
+        LocationParser.myClients = myClients;
+    }
+    
     
     
     public LocationParser(String filePath, List<CoordinateCSV> myCoordinates){

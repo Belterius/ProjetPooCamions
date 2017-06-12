@@ -63,6 +63,8 @@ public abstract class LocationCSV implements Serializable {
         return coord;
     }
     
-    
+    public double distanceToLocation(LocationCSV location){
+        return DistanceTimesDataCSV.matrix[this.getCoord().getId()][2*location.getCoord().getId()];
+    }
     
 }

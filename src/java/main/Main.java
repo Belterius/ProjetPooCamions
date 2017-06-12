@@ -7,7 +7,13 @@ package main;
 
 import FinalClass.Action;
 import FinalClass.Client;
+import FinalClass.Depot;
 import FinalClass.Vehicule;
+import GeneticAlgo.City;
+import GeneticAlgo.GA;
+import GeneticAlgo.Population;
+import GeneticAlgo.Tour;
+import GeneticAlgo.TourManager;
 import Parser.DistanceTimesCoordinatesParser;
 import Parser.DistanceTimesDataParser;
 import Parser.FleetParser;
@@ -24,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import metier.Solution;
 import metier.SolutionIndex;
 
@@ -51,9 +58,9 @@ public class Main {
 //        String nameFiles = "medium_normal";
 //        String nameFiles = "medium_all_without_trailer";
 //        String nameFiles = "medium_all_with_trailer";
-//        String nameFiles = "large_normal";
+        String nameFiles = "large_normal";
 //        String nameFiles = "large_all_without_trailer";
-        String nameFiles = "large_all_with_trailer";
+//        String nameFiles = "large_all_with_trailer";
         
         DistanceTimesCoordinatesParser coordinates = new DistanceTimesCoordinatesParser("dima/DistanceTimesCoordinates.csv");
         DistanceTimesDataParser data = new DistanceTimesDataParser("dima/DistanceTimesData.csv");
@@ -80,9 +87,137 @@ public class Main {
 //        solution6(location,fleet, nameFiles);
 //            loopForSolution(coordinates, fleet, nameFiles);
         solution7(location,fleet, nameFiles);
+//        solutionloic1(location, fleet, nameFiles);
 
     }
-    
+        public static void solutionloic1(LocationParser location, FleetParser fleet, String nameFiles) throws IOException{
+        SolutionParser solution = new SolutionParser();
+        List<Solution> mySolutions = new ArrayList<>();
+        Vehicule myTruck;
+        Boolean isDoubleCamion = false;
+        int i = 1;
+        
+        for(Client client : location.getMyClients()){
+            City city = new City(client.getCoord());
+            TourManager.addCity(city);
+        }
+        // Initialize population
+        Population pop = new Population(500, true);
+        System.out.println("Initial distance: " + pop.getFittest().getDistance());
+
+        // Evolve population for 100 generations
+        pop = GA.evolvePopulation(pop);
+        for (int index = 0; index < 300; index++) {
+            pop = GA.evolvePopulation(pop);
+        }
+
+        // Print final results
+        System.out.println("Finished");
+        System.out.println("Final distance: " + pop.getFittest().getDistance());
+        System.out.println("Solution:");
+        System.out.println(pop.getFittest());
+        Tour orderedCity = pop.getFittest();
+        List<Client> orderedClient = new ArrayList<>();
+        
+        for(City city : orderedCity.getTour()){
+           List<Client> cTempo = location.getMyClients().stream().filter(client -> client.getCoord().getId() == city.getCoord().getId()).limit(2).collect(Collectors.toList());
+           for(Client c : cTempo){
+               orderedClient.add(c);
+           }
+        }
+            System.out.println(orderedCity.getTour().size());
+            System.out.println(orderedClient.size());
+        
+        location.setMyClients(orderedClient);
+        
+        for(int iList = 0; iList < orderedClient.size(); iList++){
+            if(orderedCity.getTour().get(iList).getCoord().getId() != orderedClient.get(iList).getCoord().getId())
+                System.out.println("Indexs : " + orderedCity.getTour().get(iList) + " " + orderedClient.get(iList));
+        }
+        
+        while(location.getMyClients().size() >0)
+        {
+            isDoubleCamion = (location.getMyClients().stream().filter(client -> client.needDoubleTruck()).count() > 0); 
+            myTruck = new Vehicule(location.getMyDepots().get(0),isDoubleCamion, fleet.getMyFleets().get(2).getCapacity());
+            
+            
+            while(myTruck.livrerDanslOrdre(location.getMyClients())){
+
+            }
+            
+            myTruck.retour();
+            
+            int j=1;
+            for(Action action : myTruck.getActionRealisees()){
+                solution.addSolution(new Solution(i, j, action));
+                j++;
+            }
+            //solution.addSolution(myTruck);
+            i++;
+        }
+        //solution.toCsvFinal();
+        
+        solution.toCsvFinalSolution();
+        JpaFactory factory = new JpaFactory();
+        SolutionIndex sIndex = new SolutionIndex(nameFiles);
+        
+        for(Solution mySol : solution.mySolutions){
+            sIndex.addSolution(mySol);
+        }
+        
+        factory.getJpaSolutionIndexDao().create(sIndex);
+        
+    }
+    public static Vehicule orderSolution(Vehicule myTruck, Depot depot, boolean isDoubleCamion, int capacity ){
+        TourManager.empty();
+        List<Client> toDeliver = new ArrayList<>();
+        for(Action a : myTruck.getActionRealisees()){
+            if(a.getDestinationLocation() instanceof Client){
+                toDeliver.add((Client)a.getDestinationLocation());
+            }
+        }
+        
+        for(Client client : toDeliver){
+            City city = new City(client.getCoord());
+            TourManager.addCity(city);
+        }
+        // Initialize population
+        Population pop = new Population(500, true);
+
+        // Evolve population for 100 generations
+        pop = GA.evolvePopulation(pop);
+        for (int index = 0; index < 300; index++) {
+            pop = GA.evolvePopulation(pop);
+        }
+
+        // Print final results
+//        System.out.println("Finished");
+//        System.out.println("Final distance: " + pop.getFittest().getDistance());
+//        System.out.println("Solution:");
+//        System.out.println(pop.getFittest());
+        Tour orderedCity = pop.getFittest();
+        List<Client> orderedClient = new ArrayList<>();
+        
+        for(City city : orderedCity.getTour()){
+           List<Client> cTempo = toDeliver.stream().filter(client -> client.getCoord().getId() == city.getCoord().getId()).limit(2).collect(Collectors.toList());
+           for(Client c : cTempo){
+               orderedClient.add(c);
+           }
+        }
+        
+        Vehicule newTruck = new Vehicule(depot, isDoubleCamion, capacity);
+        for(Client c : orderedClient){
+            newTruck.livrerNoRetrait(c, false);
+        }
+        newTruck.retour();
+        
+        if( newTruck.getActionRealisees().size() != myTruck.getActionRealisees().size()){
+            return myTruck;
+        }
+        
+        return newTruck;
+    }
+        
     public static void loopForSolution(DistanceTimesCoordinatesParser coordinates, FleetParser fleet, String nameFiles){
         LocationParser location = new LocationParser(nameFiles + "/Locations.csv", coordinates.getCoordinates());
         //Get a copy
@@ -160,6 +295,7 @@ public class Main {
             }
             
             myTruck.retour();
+            myTruck = orderSolution(myTruck, location.getMyDepots().get(0),isDoubleCamion, fleet.getMyFleets().get(2).getCapacity());
                         
             int j=1;
             for(Action action : myTruck.getActionRealisees()){
