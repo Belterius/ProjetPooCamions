@@ -182,7 +182,7 @@ public class Vehicule implements Serializable {
         }
         
         //Est-ce que c'est rentable de livrer le client lors de cette tournée ?
-        if(checkRentability && this.actionRealisees.size() > 2 && isRentableLivrerClient(destination)){
+        if(checkRentability && this.actionRealisees.size() > 2 && isRentableLivrerClient(destination, currentEmplacement, myDepot)){
             return false;
         }
         
@@ -445,7 +445,7 @@ public class Vehicule implements Serializable {
         chercherClientPlusProche(listeClient, this.getActionRealisees().get(1).destinationLocation);
         int max = listeClient.size();
         int i = 0;
-        while(i < max){
+        while(i < max -1){
             if(livrer(listeClient.get(i), listeClient, true)){
                 return true;
             }
@@ -593,26 +593,25 @@ public class Vehicule implements Serializable {
         return true;
     }
     
-    private Boolean isRentableLivrerClient(Client client){
+    /**
+     * Est-il rentable de livrer le client ou plutot d'affreter un nouveau camion ?
+     * @param client
+     * @param origine
+     * @param destination
+     * @return 
+     */
+    private Boolean isRentableLivrerClient(Client client, LocationCSV origine, LocationCSV destination){
         
         Vehicule testNewVehicule = new Vehicule(myDepot, client.needDoubleTruck(), FleetParser.getCapacite());
         testNewVehicule.livrerWithoutCheckRentability(client);
         testNewVehicule.retour();
-        //On a remove des clients à livrer dans le livrer (durant le test), on doit donc
-        //le remettre pour la suite
-//        LocationParser.myClients.add(client);
         
         double resultatNewVehicule = SolutionParser.getResultatForOneVehicule(testNewVehicule);
         
-//        double resultatBackDirectToDepot = getAmountToBackToDepot();
-//        double resultatDeliverAndBackToDepot = getAmountToDeliverClientAndGoBackToDepot(client) ;
-//        double resultatKeepThisTournee =  resultatDeliverAndBackToDepot - resultatBackDirectToDepot;
-        
-        
         //Si service
         //Distance
-        int distanceCurrentLocationToDestination = getDistanceBetweenTwoLocation(currentEmplacement, client);
-        int distanceDestinationToDepot = getDistanceBetweenTwoLocation(client, myDepot);
+        int distanceCurrentLocationToDestination = getDistanceBetweenTwoLocation(origine, client);
+        int distanceDestinationToDepot = getDistanceBetweenTwoLocation(client, destination);
         int distanceTotal = distanceCurrentLocationToDestination + distanceDestinationToDepot;
         double prixDistanceTotal =  distanceTotal * FleetParser.getCoutDistanceTruck();
         if(this.remorque_2 != null){
@@ -620,64 +619,85 @@ public class Vehicule implements Serializable {
         }
         
         //Temps
-        int tempsCurrentLocationToDestination = getTempsBetweenTwoLocation(currentEmplacement, client);
-        int tempsDestinationToDepot = getTempsBetweenTwoLocation(client, myDepot);
+        int tempsCurrentLocationToDestination = getTempsBetweenTwoLocation(origine, client);
+        int tempsDestinationToDepot = getTempsBetweenTwoLocation(client, destination);
         int tempsService = client.getService_time();
         int tempsTotal = tempsCurrentLocationToDestination + tempsDestinationToDepot + tempsService;
         double prixTempsTotal =  tempsTotal * FleetParser.getCoutDuree();
         
         //Si retour direct
         //Distance
-        int distanceRetourDirectDepot = getDistanceBetweenTwoLocation(currentEmplacement, myDepot);
+        int distanceRetourDirectDepot = getDistanceBetweenTwoLocation(origine, destination);
         double prixDistanceRetourDirectDepot = distanceRetourDirectDepot * FleetParser.getCoutDistanceTruck();
         if(this.remorque_2 != null){
             prixDistanceRetourDirectDepot += distanceRetourDirectDepot * FleetParser.getCoutDistanceTruck();
         }
         
         //Temps 
-        int tempsRetourDirectDepot = getTempsBetweenTwoLocation(currentEmplacement, myDepot);
+        int tempsRetourDirectDepot = getTempsBetweenTwoLocation(origine, destination);
         double prixTempsRetourDirectDepot = tempsRetourDirectDepot * FleetParser.getCoutDuree();
         
         return resultatNewVehicule  + prixDistanceRetourDirectDepot +  prixTempsRetourDirectDepot< prixDistanceTotal + prixTempsTotal ;
     }
     
     /**
-     * Théorie : calcul le cout de la tournée si on va livrer le client et on retourne ensuite au depot
-     * @param clientToDeliver
+     * Trie la liste pour savoir quel est le client le plus rentable à livrer entre le point de départ et le point d'origine
+     * @param listeClient
+     * @param pointDeDepart
+     * @param pointArrivee
      * @return 
      */
-     private double getAmountToDeliverClientAndGoBackToDepot(Client clientToDeliver){
-        try {
-            Vehicule v = (Vehicule) this.clone();
-            v.livrerWithoutCheckRentability(clientToDeliver);
-            v.retour();
-            return SolutionParser.getResultatForOneVehicule(v);
-        } catch (CloneNotSupportedException ex) {
-            Logger.getLogger(Vehicule.class.getName()).log(Level.SEVERE, null, ex);
-        }
+    public List<Client> trierParRentabiliteListeClient(List<Client> listeClient, LocationCSV pointDeDepart, LocationCSV pointArrivee){
         
-        throw new Error("Impossible de calculer le prix si on veut finir tout de suite la tournée");
+        List<Client> listeClientOrdonnée = new ArrayList<>(listeClient);
+//        double prixEntreDeuxLocationsInitiales = getPrixEntreDeuxLocations(pointDeDepart, pointArrivee);
         
+        //Sorting
+        Collections.sort(listeClientOrdonnée, new Comparator<Client>() {
+            @Override
+            public int compare(Client client1, Client client2) {
+                
+                double prixEnLivrantLeClient1EnIntermediaire = getPrixEntreDeuxLocations(pointDeDepart, client1) + getPrixEntreDeuxLocations(client1, pointArrivee) + client1.getService_time();
+                double prixEnLivrantLeClient2EnIntermediaire = getPrixEntreDeuxLocations(pointDeDepart, client2) + getPrixEntreDeuxLocations(client2, pointArrivee) + client2.getService_time();
+                
+                if (prixEnLivrantLeClient1EnIntermediaire < prixEnLivrantLeClient2EnIntermediaire) {
+                    return 1;
+                } else if (prixEnLivrantLeClient1EnIntermediaire > prixEnLivrantLeClient2EnIntermediaire) {
+                    return -1;
+                } else {
+                    return 0;
+                }
+            }
+        });
         
-    
+        return listeClientOrdonnée;
+        
     }
     
     /**
-     * Théorie : calcul le cout de la tournée si on retourne tout de suite au dépot
+     * Tient compte du temps et des distances
+     * @param pointDeDepart
+     * @param pointArrivee
      * @return 
      */
-    private double getAmountToBackToDepot(){
-        try {
-            Vehicule v = (Vehicule) this.clone();
-            v.retour();
-            
-            return SolutionParser.getResultatForOneVehicule(v);
-        } catch (CloneNotSupportedException ex) {
-            Logger.getLogger(Vehicule.class.getName()).log(Level.SEVERE, null, ex);
+    public double getPrixEntreDeuxLocations(LocationCSV pointDeDepart, LocationCSV pointArrivee){
+         //Si service
+        //Distance
+        int distanceCurrentLocationToDestination = getDistanceBetweenTwoLocation(pointDeDepart, pointArrivee);
+        double prixDistanceTotal =  distanceCurrentLocationToDestination * FleetParser.getCoutDistanceTruck();
+        if(remorque_2 != null){
+            prixDistanceTotal += distanceCurrentLocationToDestination * FleetParser.getCoutDistanceTruck();
         }
+
+        //Temps
+        int tempsTotal = getTempsBetweenTwoLocation(pointDeDepart, pointArrivee);  
+        double prixTempsTotal =  tempsTotal * FleetParser.getCoutDuree();
         
-        throw new Error("Impossible de calculer le prix si on veut finir tout de suite la tournée");
+        return prixDistanceTotal + prixDistanceTotal;
     }
     
+    private void enleverClient(Action actionAEnlever){
+        
+    }
     
 }

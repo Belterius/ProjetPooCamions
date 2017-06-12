@@ -45,7 +45,7 @@ public class Main {
      */
     public static void main(String[] args) throws IOException {
                 
-//        String nameFiles = "small_normal";
+        String nameFiles = "small_normal";
 //        String nameFiles = "small_all_without_trailer";
 //        String nameFiles = "small_all_with_trailer";
 //        String nameFiles = "medium_normal";
@@ -53,7 +53,7 @@ public class Main {
 //        String nameFiles = "medium_all_with_trailer";
 //        String nameFiles = "large_normal";
 //        String nameFiles = "large_all_without_trailer";
-        String nameFiles = "large_all_with_trailer";
+//        String nameFiles = "large_all_with_trailer";
         
         DistanceTimesCoordinatesParser coordinates = new DistanceTimesCoordinatesParser("dima/DistanceTimesCoordinates.csv");
         DistanceTimesDataParser data = new DistanceTimesDataParser("dima/DistanceTimesData.csv");
@@ -72,6 +72,7 @@ public class Main {
         to = Paths.get("checker/SwapActions.csv"); //convert from String to Path
         Files.copy(from, to, StandardCopyOption.REPLACE_EXISTING);
         
+        double resultSolution;
 //        solution1(location,fleet );
 //        solution2(location,fleet);
 //        solution3(location,fleet);
@@ -79,10 +80,91 @@ public class Main {
 //        solution5(location,fleet, nameFiles);
 //        solution6(location,fleet, nameFiles);
 //            loopForSolution(coordinates, fleet, nameFiles);
-        solution7(location,fleet, nameFiles);
+//        resultSolution = solution7(location,fleet, nameFiles);
+        resultSolution = solution8(location,fleet, nameFiles);
+        System.out.println("Result solution : " + resultSolution);
 
     }
     
+    /**
+     * Solution : chercher le plus loin, puis toujours chercher le plus proche de ce plus loin
+     * Utilise que des camions sauf si on doit livrer en double camion
+     * @param location
+     * @param fleet 
+     */
+    public static double solution8(LocationParser location, FleetParser fleet, String nameFiles) throws IOException{
+        SolutionParser solution = new SolutionParser();
+        List<Solution> mySolutions = new ArrayList<>();
+        Vehicule myTruck;
+        Boolean isDoubleCamion = false;
+        int i= 1;
+        while(location.getMyClients().size() >0)
+        {
+            isDoubleCamion = (location.getMyClients().stream().filter(client -> client.getQuantity() > fleet.getMyFleets().get(2).getCapacity()).count() > 0); 
+            myTruck = new Vehicule(location.getMyDepots().get(0),isDoubleCamion, fleet.getMyFleets().get(2).getCapacity());
+            
+            //Avoir le plus loin
+            Client clientLePlusLoin = myTruck.trierPlusLoinParRapportDepot(location.getMyClients());
+            if(clientLePlusLoin == null){
+                throw new Error("Plus de livraison possible");
+            }
+            
+            //chercher les clients intermédiaires entre le depot et le futur plus loin client
+            
+//            myTruck.trierParRentabiliteListeClient(location.getMyClients(),myTruck.getCurrentEmplacement(), clientLePlusLoin );
+            
+            for(Client c : myTruck.trierParRentabiliteListeClient(location.getMyClients(),myTruck.getCurrentEmplacement(), clientLePlusLoin )){
+                myTruck.livrer(c, location.getMyClients(), true);
+            }
+            
+//            List<Client> listIntermediaire = ;
+//            
+//            int max = location.getMyClients().size();
+//            int i = 0;
+//            while(i < max -3){
+//                if(myTruck.livrer(location.getMyClients().get(i), location.getMyClients(), true)){
+//                }
+//                i++; 
+//            }
+            
+            myTruck.livrer(clientLePlusLoin, location.getMyClients(), true);
+            
+            //Comportement comme avant
+            while(myTruck.chercherPlusProcheParRapportPlusLoinDestinationEtLivrer(location.getMyClients(), clientLePlusLoin)){
+            }
+            
+            myTruck.retour();
+                        
+            int j=1;
+            for(Action action : myTruck.getActionRealisees()){
+//                System.out.println(action);
+                solution.addSolution(new Solution(i, j, action));
+                j++;
+            }
+            solution.addSolution(myTruck);
+            i++;
+        }
+        //solution.toCsvFinal();
+        
+        solution.toCsvFinalSolution();
+        JpaFactory factory = new JpaFactory();
+        SolutionIndex sIndex = new SolutionIndex(nameFiles);
+        
+        for(Solution mySol : solution.mySolutions){
+            sIndex.addSolution(mySol);
+        }
+        
+        factory.getJpaSolutionIndexDao().create(sIndex);
+        
+        return SolutionParser.getResultat(solution.myVehicules);
+    }
+    
+    /**
+     * Boucle sur la solution 7 pour déterminer le meilleur écartement à la droite
+     * @param coordinates
+     * @param fleet
+     * @param nameFiles 
+     */
     public static void loopForSolution(DistanceTimesCoordinatesParser coordinates, FleetParser fleet, String nameFiles){
         LocationParser location = new LocationParser(nameFiles + "/Locations.csv", coordinates.getCoordinates());
         //Get a copy
@@ -94,7 +176,7 @@ public class Main {
                 System.out.println("Eloignement : " + ELOIGNEMENT_DROITE);
 
                     totalMontant = solution7(location,fleet, nameFiles);
-
+                    
                     if(best_score > totalMontant){
                         best_score = totalMontant;
                         best_eloignement = ELOIGNEMENT_DROITE;
@@ -118,7 +200,7 @@ public class Main {
     /**
      * Solution : chercher le plus loin, puis toujours chercher le plus proche de ce plus loin
      * Utilise que des camions sauf si on doit livrer en double camion
-     * Ordonner la tournée pour faire une sorte de cercle partant à droite puis revenant à gauche
+     * Intercaller des clients entre le depot et le point le plus loin
      * @param location
      * @param fleet 
      */
