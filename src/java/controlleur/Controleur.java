@@ -77,6 +77,9 @@ public class Controleur extends HttpServlet {
                 case "detailSolution" :
                     doDetailSolution(request, response, out);
                 break;
+                case "detailVehicule" :
+                    dodetailVehicule(request, response, out);
+                break;
                 default :
                     response.sendError(response.SC_BAD_REQUEST, "error");
                 break;
@@ -94,17 +97,22 @@ public class Controleur extends HttpServlet {
             Logger.getLogger(Controleur.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+    private void dodetailVehicule(HttpServletRequest request, HttpServletResponse response, PrintWriter out) throws ServletException, IOException {
+                try {
+            List<Solution> myVehicules = new ArrayList<>();
+            for(Solution sol : myFactory.getJpaSolutionDao().findBySolutionIndexAndVehicule(Integer.parseInt(request.getParameter("idSolution")), request.getParameter("routeNumber"))){
+                    myVehicules.add(sol);
+            }
+            java.util.Collections.sort(myVehicules);
+            request.setAttribute("myVehicule", myVehicules);
+            forward("/vue/vehicule.jsp", request, response);
+        } catch (Exception ex) {
+            Logger.getLogger(Controleur.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
     private void doDetailSolution(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
         
         try {
-//            List<String> myVehicules = new ArrayList<>();
-//            for(Solution sol : myFactory.getJpaSolutionDao().findBySolutionIndex(Integer.parseInt(request.getParameter("idSolution")))){
-//                if(!myVehicules.contains(sol.getTour_id())){
-//                    myVehicules.add(sol.getTour_id());
-//                }
-//            }
-//            java.util.Collections.sort(myVehicules, Collator.getInstance());
-//            request.setAttribute("myVehicules", myVehicules);
 
             List<Solution> mySolutions = myFactory.getJpaSolutionDao().findBySolutionIndex(Integer.parseInt(request.getParameter("idSolution")));
             java.util.Collections.sort(mySolutions);
@@ -115,13 +123,16 @@ public class Controleur extends HttpServlet {
                     uniqueRoutes.add(sol.getTour_id());
                 }
             }
-            request.setAttribute("myVehicules", uniqueRoutes);
+            request.setAttribute("myVehicules", uniqueRoutes);            
+            request.setAttribute("idSolution", request.getParameter("idSolution"));
+
             forward("/vue/solution.jsp", request, response);
         } catch (ServletException ex) {
             Logger.getLogger(Controleur.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
             Logger.getLogger(Controleur.class.getName()).log(Level.SEVERE, null, ex);
         }catch(Exception e){
+            System.out.println(e);
         }
     }
 

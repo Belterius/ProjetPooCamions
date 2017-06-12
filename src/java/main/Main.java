@@ -22,6 +22,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import metier.Solution;
 import metier.SolutionIndex;
 
@@ -31,6 +33,12 @@ import metier.SolutionIndex;
  */
 public class Main {
 
+    
+    public static double step  = 0.001;
+    public static double ELOIGNEMENT_DROITE = 0.001;
+    public static double best_eloignement = 0;
+    public static double best_score = 999999999;//999 999 999
+    
     /**
      * @param args the command line arguments
      * @throws java.io.IOException
@@ -38,8 +46,14 @@ public class Main {
     public static void main(String[] args) throws IOException {
                 
 //        String nameFiles = "small_normal";
+//        String nameFiles = "small_all_without_trailer";
+//        String nameFiles = "small_all_with_trailer";
 //        String nameFiles = "medium_normal";
-        String nameFiles = "large_normal";
+//        String nameFiles = "medium_all_without_trailer";
+//        String nameFiles = "medium_all_with_trailer";
+//        String nameFiles = "large_normal";
+//        String nameFiles = "large_all_without_trailer";
+        String nameFiles = "large_all_with_trailer";
         
         DistanceTimesCoordinatesParser coordinates = new DistanceTimesCoordinatesParser("dima/DistanceTimesCoordinates.csv");
         DistanceTimesDataParser data = new DistanceTimesDataParser("dima/DistanceTimesData.csv");
@@ -63,8 +77,112 @@ public class Main {
 //        solution3(location,fleet);
 //        solution4(location,fleet, nameFiles);
 //        solution5(location,fleet, nameFiles);
-        solution6(location,fleet, nameFiles);
+//        solution6(location,fleet, nameFiles);
+//            loopForSolution(coordinates, fleet, nameFiles);
+        solution7(location,fleet, nameFiles);
 
+    }
+    
+    public static void loopForSolution(DistanceTimesCoordinatesParser coordinates, FleetParser fleet, String nameFiles){
+        LocationParser location = new LocationParser(nameFiles + "/Locations.csv", coordinates.getCoordinates());
+        //Get a copy
+        List<Client> myClients = new ArrayList<>(location.getMyClients());
+        double totalMontant = 0;
+        try {
+            while(ELOIGNEMENT_DROITE < 0.5){
+                LocationParser.myClients = new ArrayList<Client>(myClients);
+                System.out.println("Eloignement : " + ELOIGNEMENT_DROITE);
+
+                    totalMontant = solution7(location,fleet, nameFiles);
+
+                    if(best_score > totalMontant){
+                        best_score = totalMontant;
+                        best_eloignement = ELOIGNEMENT_DROITE;
+                    }
+
+                ELOIGNEMENT_DROITE += step;
+            }
+            
+            System.out.println("Meilleur eloignement : " + best_eloignement + " - Score : " + best_score);
+            
+            ELOIGNEMENT_DROITE = best_eloignement;
+            LocationParser.myClients = new ArrayList<Client>(myClients);
+            solution7(location,fleet, nameFiles);
+            
+        } catch (IOException ex) {
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+    }
+      
+    /**
+     * Solution : chercher le plus loin, puis toujours chercher le plus proche de ce plus loin
+     * Utilise que des camions sauf si on doit livrer en double camion
+     * Ordonner la tournée pour faire une sorte de cercle partant à droite puis revenant à gauche
+     * @param location
+     * @param fleet 
+     */
+    public static double solution7(LocationParser location, FleetParser fleet, String nameFiles) throws IOException{
+        SolutionParser solution = new SolutionParser();
+        List<Solution> mySolutions = new ArrayList<>();
+        Vehicule myTruck;
+        int i =1;
+        Boolean isDoubleCamion = false;
+        
+        while(location.getMyClients().size() >0)
+        {
+            isDoubleCamion = (location.getMyClients().stream().filter(client -> client.getQuantity() > fleet.getMyFleets().get(2).getCapacity()).count() > 0); 
+            myTruck = new Vehicule(location.getMyDepots().get(0),isDoubleCamion, fleet.getMyFleets().get(2).getCapacity());
+            
+            //Avoir le plus loin
+            Client clientLePlusLoin = myTruck.trierPlusLoinParRapportDepot(location.getMyClients());
+            if(clientLePlusLoin == null){
+                throw new Error("Plus de livraison possible");
+            }
+            
+            //Mettre dans une liste les clients entre le plus loin et le depot
+            List<Client> listClientIntermediaire = new ArrayList<>();
+            double distance = 0;
+            
+            for(Client c : location.getMyClients()){
+                distance = myTruck.distancePointDroite(clientLePlusLoin, c);
+//                System.out.println("Distance : " + distance);
+                if( distance != 0 && Math.abs(distance) < ELOIGNEMENT_DROITE ){
+                    listClientIntermediaire.add(c);
+                }
+            }
+            
+            while(myTruck.chercherPlusProcheParRapportAuCamionEtLivrer(listClientIntermediaire));
+            myTruck.livrer(clientLePlusLoin,location.getMyClients(), false );
+            
+            //Comportement comme avant
+            while(myTruck.chercherPlusProcheParRapportPlusLoinDestinationEtLivrer(location.getMyClients(), clientLePlusLoin)){
+            }
+            
+            myTruck.retour();
+                        
+            int j=1;
+            for(Action action : myTruck.getActionRealisees()){
+//                System.out.println(action);
+                solution.addSolution(new Solution(i, j, action));
+                j++;
+            }
+            solution.addSolution(myTruck);
+            i++;
+        }
+        //solution.toCsvFinal();
+        
+        solution.toCsvFinalSolution();
+        JpaFactory factory = new JpaFactory();
+        SolutionIndex sIndex = new SolutionIndex(nameFiles);
+        
+        for(Solution mySol : solution.mySolutions){
+            sIndex.addSolution(mySol);
+        }
+        
+        factory.getJpaSolutionIndexDao().create(sIndex);
+        
+        return SolutionParser.getResultat(solution.myVehicules);
     }
     
     /**
@@ -83,7 +201,7 @@ public class Main {
         
         while(location.getMyClients().size() >0)
         {
-            isDoubleCamion = (location.getMyClients().stream().filter(client -> client.getQuantity() > fleet.getMyFleets().get(2).getCapacity()).count() > 0); 
+            isDoubleCamion = (location.getMyClients().stream().filter(client -> client.needDoubleTruck()).count() > 0); 
             myTruck = new Vehicule(location.getMyDepots().get(0),isDoubleCamion, fleet.getMyFleets().get(2).getCapacity());
             
             if(! myTruck.chercherPlusLoinParRapportAuCamionEtLivrer(location.getMyClients())){
@@ -300,8 +418,8 @@ public class Main {
         SolutionParser solution = new SolutionParser();
         List<Client> myClients = new ArrayList<Client>(location.getMyClients());
         for(Client client : myClients){
-            Vehicule myTruck = new Vehicule(location.getMyDepots().get(0), client.getQuantity()> fleet.getMyFleets().get(2).getCapacity() ? true : false, fleet.getMyFleets().get(2).getCapacity());
-            myTruck.livrer(client, location.getMyClients());
+            Vehicule myTruck = new Vehicule(location.getMyDepots().get(0), client.needDoubleTruck(), FleetParser.getCapacite());
+            myTruck.livrer(client, location.getMyClients(), false);
             myTruck.retour();
             solution.addSolution(myTruck);
         }
@@ -323,27 +441,6 @@ public class Main {
                 return 0;
             }
         }
-    }
-    public void save(){
-//        DistanceTimesCoordinatesParser coordinates = new DistanceTimesCoordinatesParser("dima/DistanceTimesCoordinates.csv");
-//        DistanceTimesDataParser data = new DistanceTimesDataParser("dima/DistanceTimesData.csv");
-//        FleetParser fleet = new FleetParser("small_normal/Fleet.csv");
-//        LocationParser location = new LocationParser("small_normal/Locations.csv", coordinates.getCoordinates());
-//        SwapActionParser swapAction = new SwapActionParser("small_normal/SwapActions.csv");
-//        
-//        SolutionParser solution = new SolutionParser();
-//        int i = 0;
-//        int j;
-//        for(Client loc : location.getMyClients()){
-//                j = 0;
-//                i++;
-//                int max = fleet.getMyFleets().get(fleet.getMyFleets().size()-1).getCapacity();
-//                solution.addSolution(new Solution(i, ++j, "DEPOT", "D1", true, 1,2, "NONE", 0,0));
-//                solution.addSolution(new Solution(i, ++j, loc.getLocation_type(), loc.getLocation_id() , true, 1,2, "NONE", amountToDeliver(loc.getQuantity(), max, false), amountToDeliver(loc.getQuantity(), max, true)));
-//                solution.addSolution(new Solution(i, ++j, "DEPOT", "D1", true, 1,2, "NONE", 0,0));
-//        }
-//        
-//        solution.toCsv();
-        
-    }
+    }    
+    
 }

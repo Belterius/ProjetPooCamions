@@ -140,6 +140,7 @@ public class Action implements Serializable {
             quantity_Swap_Body_2 = 0;
         }
         addTimeSpent();
+        addDistanceSpent();
     }
     public void livrerClient(Remorque rq1) {
         if(destinationLocation instanceof Client){
@@ -156,6 +157,7 @@ public class Action implements Serializable {
             quantity_Swap_Body_2 = 0;
         }
         addTimeSpent();
+        addDistanceSpent();
     }
 
     @Override
@@ -193,6 +195,17 @@ public class Action implements Serializable {
             }else{
                 System.out.println(e);
             }
+        }
+    }
+    
+    private void addDistanceSpent(){
+        try{
+            int i = 2*destinationLocation.getCoord().getId();
+            int j = origineLocation.getCoord().getId();
+            
+            distanceSpent = DistanceTimesDataCSV.matrix[i][j];
+        }catch(Exception e){
+            System.out.println(e);
         }
     }
 }

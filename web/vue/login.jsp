@@ -13,7 +13,7 @@
     </head>
     <body>
         <h1>Renseignez vos identifiants</h1>
-        <form action="/ProjetPooWeb/Controleur" method="get">
+        <form action="/ProjetPooCamions/Controleur" method="get">
             <label for="login">Login :</label>
             <input type="text" id="login" value="admin" name="login"/>
             <br/>

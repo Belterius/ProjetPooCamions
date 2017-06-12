@@ -18,7 +18,7 @@ import metier.FleetCSV;
  * @author belterius
  */
 public class FleetParser {
-    private List<FleetCSV> myFleets;
+    private static List<FleetCSV> myFleets;
     private String currentLine;
     private String separator = ";";
 
@@ -38,5 +38,30 @@ public class FleetParser {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    
+    
+    public static float getCoutUsageFixeSwap(){
+        return myFleets.get(1).getCosts_mu_usage();
+    }
+    
+    public static float getCoutUsageFixeTruck(){
+        return myFleets.get(0).getCosts_mu_usage();
+    }
+    
+    public static float getCoutDistanceTruck(){
+        return myFleets.get(0).getCosts_mu_km() / 1000;
+    }
+    
+    public static float getCoutDistanceSemiTrailer(){
+        return myFleets.get(1).getCosts_mu_km() / 1000;
+    }
+    
+    public static float getCoutDuree(){
+        return myFleets.get(0).getCosts_mu_h() / 3600;
+    }
+    
+    public static float getCapacite(){
+        return myFleets.get(2).getCapacity();
     }
 }

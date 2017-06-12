@@ -27,6 +27,22 @@ public class JpaSolutionDao extends JpaDao<Solution> implements SolutionDao {
         query.setParameter("idindex", solutionIndexId);
         return (List<Solution>) query.getResultList();
     }
+     @Override
+    public List<Solution> findBySolutionIndexAndVehicule(int solutionIndexId, int vehiculeId) {
+        
+        Query query = em.createNamedQuery("Solution.findBySolutionIndexAndVehicule");
+        query.setParameter("idindex", solutionIndexId);        
+        query.setParameter("idvehicule", vehiculeId);
+        return (List<Solution>) query.getResultList();
+    }
+         @Override
+    public List<Solution> findBySolutionIndexAndVehicule(int solutionIndexId, String vehiculeId) {
+        
+        Query query = em.createNamedQuery("Solution.findBySolutionIndexAndVehicule");
+        query.setParameter("idindex", solutionIndexId);        
+        query.setParameter("idvehicule",Integer.parseInt(vehiculeId.replace("R", "")));
+        return (List<Solution>) query.getResultList();
+    }
     
     private static class SingletonHolder {
         private final static JpaSolutionDao instance = new JpaSolutionDao();

@@ -31,6 +31,7 @@ import javax.xml.bind.annotation.XmlRootElement;
     @NamedQuery(name = "Solution.findAll", query = "SELECT a FROM Solution a")
     , @NamedQuery(name = "Solution.findById", query = "SELECT a FROM Solution a WHERE a.idSolution = :id")
     , @NamedQuery(name = "Solution.findBySolutionIndex", query = "SELECT a FROM Solution a WHERE a.solutionindex.idSolution = :idindex")
+    , @NamedQuery(name = "Solution.findBySolutionIndexAndVehicule", query = "SELECT a FROM Solution a WHERE a.solutionindex.idSolution = :idindex AND a.tour_id = :idvehicule")
 })
 public class Solution implements Serializable, Comparable<Solution> {
     @Basic(optional=false) 
@@ -39,6 +40,10 @@ public class Solution implements Serializable, Comparable<Solution> {
     private int tour_position;
     @Basic(optional=false) 
     private String location_id;
+    @Basic(optional=false) 
+    private String location_x;
+    @Basic(optional=false) 
+    private String location_y;
     @Basic(optional=false) 
     private String location_type;
     @Basic(optional=false) 
@@ -66,6 +71,14 @@ public class Solution implements Serializable, Comparable<Solution> {
 
     public void setSolutionindex(SolutionIndex solutionindex) {
         this.solutionindex = solutionindex;
+    }
+
+    public String getLocation_x() {
+        return location_x;
+    }
+
+    public String getLocation_y() {
+        return location_y;
     }
 
 
@@ -119,6 +132,8 @@ public class Solution implements Serializable, Comparable<Solution> {
         this.tour_position = actionId;
         this.location_type = action.getDestinationLocation().getLocation_type();
         this.location_id = action.getDestinationLocation().getLocation_id();
+        this.location_x = String.valueOf(action.getDestinationLocation().getCoord().getX());        
+        this.location_y = String.valueOf(action.getDestinationLocation().getCoord().getY());        
         this.semi_trailer_attached = action.isSemi_Trailer_Attached();
         this.swap_body_trailer = action.getId_First_Remorque();
         this.swap_body_semi_trailer = action.getId_Second_Remorque();
