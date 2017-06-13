@@ -6,8 +6,8 @@
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        
         <title>Tournées</title>
 
         <!-- Bootstrap -->
@@ -22,8 +22,10 @@
         </c:if>
 
         <div class="row">
-            <div class="col-md-8">
-
+            <div class="col-md-8" id="container">
+                <div id="map">
+                    <p>Veuillez patienter pendant le chargement de la carte...</p>
+                </div>
             </div>
             <div class="col-md-4">
                 <div class="row">
@@ -36,8 +38,8 @@
                             <th>Lieu n°</th>
                             <th>Quantité 1</th>
                             <th>Quantité 2</th>
-                            <th>Location X</th>
-                            <th>Location Y</th>
+                            <th class="x">Location X</th>
+                            <th clas="y">Location Y</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -56,4 +58,11 @@
             </div>
         </div>
     </body>
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="js/bootstrap.js"></script>
+    
+    <script src="http://maps.google.com/maps/api/js?key=AIzaSyCwGH4tJhoPRlxgp-7-5kffWc5b_uktoEU&language=fr"></script>
+    <script src="js/functions.js"></script>
 </html>
