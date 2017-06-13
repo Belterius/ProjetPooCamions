@@ -164,13 +164,6 @@ public class Action implements Serializable {
     public String toString() {
         return String.format("%s;%s;%s;%s;%s;%s;%s;%s",this.destinationLocation.getLocation_id(), this.destinationLocation.getLocation_type(), this.semi_Trailer_Attached ? 1 : 0, this.id_First_Remorque, this.id_Second_Remorque, swap_Action, quantity_Swap_Body_1, quantity_Swap_Body_2);
     }
-    public int getTimeAction(LocationCSV destination){
-        return DistanceTimesDataCSV.matrix[origineLocation.getCoord().getId()][2*destinationLocation.getCoord().getId()+1];
-    }
-    public int getDistanceAction(LocationCSV destination){
-        return DistanceTimesDataCSV.matrix[origineLocation.getCoord().getId()][2*destinationLocation.getCoord().getId()];
-    }
-    
 //    public void addTimeSpent(){
 //        try{
 //            if(destinationLocation instanceof Client)

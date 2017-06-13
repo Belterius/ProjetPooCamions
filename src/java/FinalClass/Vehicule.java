@@ -182,7 +182,7 @@ public class Vehicule implements Serializable {
         }
         
         //Est-ce que c'est rentable de livrer le client lors de cette tournée ?
-        if(checkRentability && this.actionRealisees.size() > 2 && isRentableLivrerClient(destination)){
+        if(checkRentability && this.actionRealisees.size() > 2 &&  isRentableLivrerClient(destination)){
             return false;
         }
         
@@ -371,8 +371,10 @@ public class Vehicule implements Serializable {
             @Override
             public int compare(Client client1, Client client2) {
                 
-                int tempsDistanceC1 = DistanceTimesDataCSV.getDifferenceTimeBetweenLocationAndClient(pointDeDepart, client1);
-                int tempsDistanceC2 = DistanceTimesDataCSV.getDifferenceTimeBetweenLocationAndClient(pointDeDepart, client2);
+//                int tempsDistanceC1 = DistanceTimesDataCSV.getDifferenceTimeBetweenLocationAndClient(pointDeDepart, client1);
+//                int tempsDistanceC2 = DistanceTimesDataCSV.getDifferenceTimeBetweenLocationAndClient(pointDeDepart, client2);
+                int tempsDistanceC1 = getTempsBetweenTwoLocation(pointDeDepart, client1);
+                int tempsDistanceC2 = getTempsBetweenTwoLocation(pointDeDepart, client2);
                 
                 if (tempsDistanceC1 > tempsDistanceC2) {
                     return 1;
