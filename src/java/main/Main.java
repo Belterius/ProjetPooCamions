@@ -45,14 +45,14 @@ public class Main {
      */
     public static void main(String[] args) throws IOException {
                 
-        String nameFiles = "small_normal";
+//        String nameFiles = "small_normal";
 //        String nameFiles = "small_all_without_trailer";
 //        String nameFiles = "small_all_with_trailer";
 //        String nameFiles = "medium_normal";
 //        String nameFiles = "medium_all_without_trailer";
 //        String nameFiles = "medium_all_with_trailer";
 //        String nameFiles = "large_normal";
-//        String nameFiles = "large_all_without_trailer";
+        String nameFiles = "large_all_without_trailer";
 //        String nameFiles = "large_all_with_trailer";
         
         DistanceTimesCoordinatesParser coordinates = new DistanceTimesCoordinatesParser("dima/DistanceTimesCoordinates.csv");
@@ -116,6 +116,7 @@ public class Main {
             if(! myTruck.chercherPlusLoinParRapportAuCamionEtLivrer(location.getMyClients())){
                 throw new Error("Plus de livraison possible");
             }
+            myTruck.retour();
             
             //Comportement comme avant
             while(myTruck.getBestToInsert(location.getMyClients())){
@@ -123,7 +124,7 @@ public class Main {
 //                System.out.println("Quantité restant : \t Remorque 1 : " + myTruck.getRemorque_1().getQuantityLeft() + "\t Remorque 2 : " + myTruck.getRemorque_2().getQuantityLeft());
             }
             
-            myTruck.retour();
+//            myTruck.retour();
                         
             int j=1;
             for(Action action : myTruck.getActionRealisees()){

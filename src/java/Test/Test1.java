@@ -39,7 +39,7 @@ public class Test1 {
         }
        Collections.sort(mySols);
        
-       for(Solution sol : mySols){
+       for(Solution sol : myFactory.getJpaSolutionDao().findBySolutionIndexAndVehicule(1,"R1")){
            System.out.println(sol.toString());
        }
     }

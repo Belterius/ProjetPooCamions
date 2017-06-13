@@ -9,11 +9,11 @@
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title>JSP Page</title>
+        <title>Login</title>
     </head>
     <body>
         <h1>Renseignez vos identifiants</h1>
-        <form action="/ProjetPooWeb/Controleur" method="get">
+        <form action="/Projet_poo_web/Controleur" method="get">
             <label for="login">Login :</label>
             <input type="text" id="login" value="admin" name="login"/>
             <br/>

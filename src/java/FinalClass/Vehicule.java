@@ -170,8 +170,13 @@ public class Vehicule implements Serializable {
      * @param checkRentability
      */
     public boolean livrer(Client destination, List<Client> listClient, boolean checkRentability){
-        
+      
         if(!checkIfDeliverPossible(destination)){
+            return false;
+        }
+        
+        //Est-ce que c'est rentable de livrer le client lors de cette tournée ?
+        if(checkRentability && this.actionRealisees.size() > 2 &&  isRentableLivrerClient(destination, myDepot, currentEmplacement)){
             return false;
         }
         
@@ -445,12 +450,10 @@ public class Vehicule implements Serializable {
                 
 //                int tempsDistanceC1 = DistanceTimesDataCSV.getDifferenceTimeBetweenLocationAndClient(pointDeDepart, client1);
 //                int tempsDistanceC2 = DistanceTimesDataCSV.getDifferenceTimeBetweenLocationAndClient(pointDeDepart, client2);
-                
+                              
                 int tempsDistanceC1 = getTempsBetweenTwoLocation(pointDeDepart, client1);
                 int tempsDistanceC2 = getTempsBetweenTwoLocation(pointDeDepart, client2);
-                
-                
-                
+
                 if (tempsDistanceC1 > tempsDistanceC2) {
                     return 1;
                 } else if (tempsDistanceC1 < tempsDistanceC2) {
@@ -747,11 +750,45 @@ public class Vehicule implements Serializable {
             }
         });
         
+        return listeClientOrdonnée;
         
+    }
+    
+    /**
+     * Trie la liste pour savoir quel est le client le plus rentable à livrer entre le point de départ et le point d'origine
+     * @param listeClient
+     * @param pointDeDepart
+     * @param pointArrivee
+     * @return 
+     */
+    public List<Client> trierParRentabiliteListeClientDesc(List<Client> listeClient, LocationCSV pointDeDepart, LocationCSV pointArrivee){
+        
+        List<Client> listeClientOrdonnée = listeClient;
+//        double prixEntreDeuxLocationsInitiales = getPrixEntreDeuxLocationsSansServiceTime(pointDeDepart, pointArrivee);
+        
+        //Sorting
+        Collections.sort(listeClientOrdonnée, new Comparator<Client>() {
+            @Override
+            public int compare(Client client1, Client client2) {
+                
+                double prixEnLivrantLeClient1EnIntermediaire = getPrixEntreDeuxLocationsSansServiceTime(pointDeDepart, client1) + getPrixEntreDeuxLocationsSansServiceTime(client1, pointArrivee) + client1.getService_time();
+                double prixEnLivrantLeClient2EnIntermediaire = getPrixEntreDeuxLocationsSansServiceTime(pointDeDepart, client2) + getPrixEntreDeuxLocationsSansServiceTime(client2, pointArrivee) + client2.getService_time();
+                
+                if (prixEnLivrantLeClient1EnIntermediaire > prixEnLivrantLeClient2EnIntermediaire) {
+                    return 1;
+                } else if (prixEnLivrantLeClient1EnIntermediaire < prixEnLivrantLeClient2EnIntermediaire) {
+                    return -1;
+                } else {
+                    return 0;
+                }
+            }
+        });
         
         return listeClientOrdonnée;
         
     }
+    
+    
     
     /**
      * Tient compte du temps et des distances
@@ -760,7 +797,10 @@ public class Vehicule implements Serializable {
      * @return 
      */
     public double getPrixEntreDeuxLocationsSansServiceTime(LocationCSV pointDeDepart, LocationCSV pointArrivee){
-         //Si service
+         
+        
+        double coeffTemps = 10;
+        //Si service
         //Distance
         int distanceCurrentLocationToDestination = getDistanceBetweenTwoLocation(pointDeDepart, pointArrivee);
         double prixDistanceTotal =  distanceCurrentLocationToDestination * FleetParser.getCoutDistanceTruck();
@@ -772,7 +812,7 @@ public class Vehicule implements Serializable {
         int tempsTotal = getTempsBetweenTwoLocation(pointDeDepart, pointArrivee);  
         double prixTempsTotal =  tempsTotal * FleetParser.getCoutDuree();
         
-        return prixDistanceTotal + prixTempsTotal;
+        return prixDistanceTotal + coeffTemps * prixTempsTotal;
     }
     
     /**
@@ -819,35 +859,41 @@ public class Vehicule implements Serializable {
         }
         
         //Peut etre optimisé en faisant une fonction et en retournant true dès que l'on a assez de temps !
-        List<Client> listClientCloserThanFarthest = new ArrayList<>(listClientToProcess);
-        this.chercherClientPlusLoin(listClientCloserThanFarthest, this.currentEmplacement);
+//        List<Client> listClientCloserThanFarthest = new ArrayList<>(listClientToProcess);
+//        this.chercherClientPlusLoin(listClientCloserThanFarthest, this.currentEmplacement);
+//        
+//        Iterator<Client> i2 = listClientCloserThanFarthest.iterator();
+//        while (i2.hasNext()) {
+//            Client c = i2.next();
+//            if(!enoughTimeIfInsertAfter(c)){
+//                i2.remove();
+//            }
+//        }
         
-        Iterator<Client> i2 = listClientCloserThanFarthest.iterator();
-        while (i2.hasNext()) {
-            Client c = i2.next();
-            if(!enoughTimeIfInsertAfter(c)){
-                i2.remove();
-            }
-        }
-        
-        MeilleurRentabiliteObject meilleurRentabilite = new MeilleurRentabiliteObject(null, null, 0);
-        if(listClientCloserThanFarthest.isEmpty()){
-//            throw new Error("Plus de clients");
-            meilleurRentabilite = new MeilleurRentabiliteObject(null,null,999999999 );
-            return false;
-        }else{
-            double bestPriceCloserThanFarthest = this.getPrixEntreDeuxLocationsSansServiceTime(this.currentEmplacement,listClientCloserThanFarthest.get(0) ) + 
-                listClientCloserThanFarthest.get(0).getPrix_service_time();
-            meilleurRentabilite = new MeilleurRentabiliteObject(null,listClientCloserThanFarthest.get(0),bestPriceCloserThanFarthest );
-        
-        }
+//        MeilleurRentabiliteObject meilleurRentabilite = new MeilleurRentabiliteObject(null, null, 0);
+//        if(listClientCloserThanFarthest.isEmpty()){
+////            throw new Error("Plus de clients");
+//            meilleurRentabilite = new MeilleurRentabiliteObject(null,null,999999999 );
+////            return false;
+//        }else{
+//            double bestPriceCloserThanFarthest = this.getPrixEntreDeuxLocationsSansServiceTime(this.currentEmplacement,listClientCloserThanFarthest.get(0) ) + 
+//                listClientCloserThanFarthest.get(0).getPrix_service_time();
+//            meilleurRentabilite = new MeilleurRentabiliteObject(null,listClientCloserThanFarthest.get(0),bestPriceCloserThanFarthest );
+//        
+//        }
             
+        MeilleurRentabiliteObject meilleurRentabilite = null;
         //On commence à 1 car le 0 c'est que le dépot
         //On finit à -1 car une liste part de 0
 //        List<MeilleurRentabiliteObject> listMeilleurRentabilite = new ArrayList<>();
-        for(Action a : this.actionRealisees.subList(1, this.actionRealisees.size()-1)){
+        for(Action a : this.actionRealisees.subList(1, this.actionRealisees.size())){
             meilleurRentabilite = getBestToInsertRecur(a,meilleurRentabilite , listClientToProcess);
         }
+        
+        if(meilleurRentabilite == null){
+            return false;
+        }
+        
         insertNewClient(meilleurRentabilite);
         
         return true;
@@ -856,7 +902,7 @@ public class Vehicule implements Serializable {
     private MeilleurRentabiliteObject getBestToInsertRecur(Action action, MeilleurRentabiliteObject meilleurRentabilite, List<Client> listClient){
         
         for(Client c : listClient){
-            
+                        
             //Avoir le coût actuel entre l'origine et la destination
             double currentPrice = this.getPrixEntreDeuxLocationsSansServiceTime(action.origineLocation, action.destinationLocation);
             
@@ -867,9 +913,13 @@ public class Vehicule implements Serializable {
             
             //Vérifier si on a assez de temps pour faire le détour ! 
             if(enoughTimeIfInsertBetween(action, c)){
-                //Vérifie si le prix est vraiment mieux (rentable ?)
-                if(newPrice - currentPrice < meilleurRentabilite.price){
+                if(meilleurRentabilite == null){
                     meilleurRentabilite = new MeilleurRentabiliteObject(action, c, newPrice - currentPrice);
+                }else{
+                   //Vérifie si le prix est vraiment mieux (rentable ?)
+                    if(newPrice - currentPrice < meilleurRentabilite.price){
+                        meilleurRentabilite = new MeilleurRentabiliteObject(action, c, newPrice - currentPrice);
+                    } 
                 }
             }            
         }  
@@ -888,73 +938,46 @@ public class Vehicule implements Serializable {
                 - timeSpentBetweenOldOrigineAndOldDestination 
                 + getTempsBetweenTwoLocation(a.origineLocation, clientToInsert)
                 + getTempsBetweenTwoLocation(clientToInsert, a.destinationLocation)
-                + clientToInsert.getService_time()
-                + getTempsBetweenTwoLocation(currentEmplacement, myDepot);
+                + clientToInsert.getService_time();
+//                + getTempsBetweenTwoLocation(currentEmplacement, myDepot);
         
         return newTimeSpent <= FleetCSV.getOperating_time();   
     }
     
     private void insertNewClient(MeilleurRentabiliteObject clientToInsert){
-        if(clientToInsert.clientToInsert.getLocation_id().equals("C56")){
-                System.out.println("OK");
-            }
-        
-        if(clientToInsert.actionToModify == null){
+                
+//        if(clientToInsert.actionToModify == null){
             //Placer à la fin => un simple livrer
 //            this.livrerWithoutCheckRentability(clientToInsert.clientToInsert);
-            this.livrerNoCheck(clientToInsert.clientToInsert, null, false);
+//            this.livrerNoCheck(clientToInsert.clientToInsert, null, false);
 //            System.out.println("Livraison normal");
-        }else{
+//        }else{
 //            System.out.println("Livraison entre 2");
             int indexOfActionToCut = this.actionRealisees.indexOf(clientToInsert.actionToModify);
-            System.out.println("Quantité à livrer : " + clientToInsert.clientToInsert.getQuantity());
+//            System.out.println("Quantité à livrer : " + clientToInsert.clientToInsert.getQuantity());
             
-            //Devoir insérer entre 2 locations
-//            List<Action> listActionLeft = this.actionRealisees.subList(0, indexOfActionToCut);
-//            List<Action> listActionRight = this.actionRealisees.subList(indexOfActionToCut, this.actionRealisees.size());
-            
+            //Devoir insérer entre 2 locations            
             LocationCSV origineLocation = clientToInsert.actionToModify.origineLocation;
             LocationCSV destinationLocation = clientToInsert.actionToModify.destinationLocation;
             
-            //Refaire le lien entre le previous et le next pour les origines et destinations
-//            this.actionRealisees.get(indexOfActionToCut).destinationLocation = clientToInsert.clientToInsert;
-//            int timeSpentForThisClient = this.getTempsBetweenTwoLocation(origineLocation, clientToInsert.clientToInsert) + clientToInsert.clientToInsert.getService_time();
-//            this.actionRealisees.get(indexOfActionToCut).timeSpent = timeSpentForThisClient;
             this.actionRealisees.get(indexOfActionToCut).origineLocation = clientToInsert.clientToInsert;
-            int timeSpentForThisClient = this.getTempsBetweenTwoLocation(clientToInsert.clientToInsert, destinationLocation) + ((Client)destinationLocation).getService_time();
+            int timeSpentForThisClient = this.getTempsBetweenTwoLocation(clientToInsert.clientToInsert, destinationLocation) + (destinationLocation instanceof Client ? ((Client)destinationLocation).getService_time() : 0);
             this.actionRealisees.get(indexOfActionToCut).timeSpent = timeSpentForThisClient;
-            
-            //Insérer la nouvelle action
-//            Remorque newTempRemorque1 = new Remorque(clientToInsert.actionToModify.id_First_Remorque, clientToInsert.actionToModify.origineLocation, clientToInsert.actionToModify.semi_Trailer_Attached, clientToInsert.actionToModify.quantity_Swap_Body_1);
-//            Remorque newTempRemorque2 = new Remorque(clientToInsert.actionToModify.id_Second_Remorque, clientToInsert.actionToModify.origineLocation, clientToInsert.actionToModify.semi_Trailer_Attached, clientToInsert.actionToModify.quantity_Swap_Body_2);
             
             this.actionRealisees.add(indexOfActionToCut, new Action(origineLocation, clientToInsert.clientToInsert, this.remorque_1, this.remorque_2, "NONE"));
             
             //Recalculez tous les quantity des remorques des actions suivantes
             int i;
-//            for(i=indexOfActionToCut;i<this.actionRealisees.size();i++){
-//              TODO  
-//                this.actionRealisees.get(i).id_First_Remorque
-//                this.actionRealisees.get(i).id_Second_Remorque
-//                this.actionRealisees.get(i).semi_Trailer_Attached
-//                this.actionRealisees.get(i).quantity_Swap_Body_1 = this.actionRealisees.get(i-1).quantity_Swap_Body_1;
-//                this.actionRealisees.get(i).quantity_Swap_Body_2 = this.actionRealisees.get(i-1).quantity_Swap_Body_2;
-//                this.actionRealisees.get(i).livrerClient(this.remorque_1, this.remorque_2);
-//            }
             
             //Actualisation du temps dépensé pour le véhicule courant
             this.timeSpent += this.getTempsBetweenTwoLocation(origineLocation, clientToInsert.clientToInsert) 
                     + this.getTempsBetweenTwoLocation(clientToInsert.clientToInsert,  destinationLocation)  
                     + clientToInsert.clientToInsert.getService_time()
                     - this.getTempsBetweenTwoLocation(origineLocation, destinationLocation);
-            
-            if(this.timeSpent > FleetCSV.getOperating_time()){
-                System.out.println("OK");
-            }
-            
+                        
             //Enlever de la liste des location à traiter !
             LocationParser.myClients.remove(clientToInsert.clientToInsert);
-        }
+//        }
         
     }
     
