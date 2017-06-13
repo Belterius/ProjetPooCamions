@@ -43,6 +43,10 @@ public class Client extends LocationCSV implements Serializable{
     @Basic(optional = false)
     @Column(name = "SERVICETIME")
     private int service_time;
+    
+    @Basic(optional = false)
+    @Column(name = "PRIXSERVICETIME")
+    private double prix_service_time;
 
     protected Client() {
     }
@@ -61,6 +65,7 @@ public class Client extends LocationCSV implements Serializable{
         this.isTrainPossible = nb_possible_train;
         this.service_time = service_time;
         this.quantity = quantity;
+        this.prix_service_time = service_time * FleetParser.getCoutDuree();
     }
 
     public int getQuantity() {
@@ -86,5 +91,11 @@ public class Client extends LocationCSV implements Serializable{
     public Boolean needDoubleTruck(){
         return (this.quantity > FleetParser.getCapacite());
     }
+
+    public double getPrix_service_time() {
+        return prix_service_time;
+    }
+    
+    
     
 }

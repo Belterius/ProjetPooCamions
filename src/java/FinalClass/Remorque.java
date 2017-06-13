@@ -64,7 +64,7 @@ public class Remorque implements Serializable {
      * @param isAttached
      * @param quantityLeft 
      */
-    public Remorque(int idOrigine, LocationCSV currentRemorqueLocation, Boolean isAttached, float quantityLeft) {
+    public Remorque(int idOrigine, LocationCSV currentRemorqueLocation, boolean isAttached, float quantityLeft) {
         this.idOrigine = idOrigine;
         this.currentRemorqueLocation = currentRemorqueLocation;
         this.isAttached = isAttached;

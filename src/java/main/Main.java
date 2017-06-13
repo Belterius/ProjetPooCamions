@@ -100,37 +100,27 @@ public class Main {
         int i= 1;
         while(location.getMyClients().size() >0)
         {
+//            System.out.println("Size : " + location.getMyClients().size());
+            System.out.println("New camion");
             isDoubleCamion = (location.getMyClients().stream().filter(client -> client.getQuantity() > fleet.getMyFleets().get(2).getCapacity()).count() > 0); 
             myTruck = new Vehicule(location.getMyDepots().get(0),isDoubleCamion, fleet.getMyFleets().get(2).getCapacity());
             
             //Avoir le plus loin
-            Client clientLePlusLoin = myTruck.trierPlusLoinParRapportDepot(location.getMyClients());
-            if(clientLePlusLoin == null){
+//            Client clientLePlusLoin = myTruck.trierPlusLoinParRapportDepot(location.getMyClients());
+//            if(clientLePlusLoin == null){
+//                throw new Error("Plus de livraison possible");
+//            }
+//            
+//            myTruck.livrer(clientLePlusLoin, location.getMyClients(), true);
+            
+            if(! myTruck.chercherPlusLoinParRapportAuCamionEtLivrer(location.getMyClients())){
                 throw new Error("Plus de livraison possible");
             }
             
-            //chercher les clients intermédiaires entre le depot et le futur plus loin client
-            
-//            myTruck.trierParRentabiliteListeClient(location.getMyClients(),myTruck.getCurrentEmplacement(), clientLePlusLoin );
-            
-            for(Client c : myTruck.trierParRentabiliteListeClient(location.getMyClients(),myTruck.getCurrentEmplacement(), clientLePlusLoin )){
-                myTruck.livrer(c, location.getMyClients(), true);
-            }
-            
-//            List<Client> listIntermediaire = ;
-//            
-//            int max = location.getMyClients().size();
-//            int i = 0;
-//            while(i < max -3){
-//                if(myTruck.livrer(location.getMyClients().get(i), location.getMyClients(), true)){
-//                }
-//                i++; 
-//            }
-            
-            myTruck.livrer(clientLePlusLoin, location.getMyClients(), true);
-            
             //Comportement comme avant
-            while(myTruck.chercherPlusProcheParRapportPlusLoinDestinationEtLivrer(location.getMyClients(), clientLePlusLoin)){
+            while(myTruck.getBestToInsert(location.getMyClients())){
+                System.out.println("Size : " + location.getMyClients().size());
+//                System.out.println("Quantité restant : \t Remorque 1 : " + myTruck.getRemorque_1().getQuantityLeft() + "\t Remorque 2 : " + myTruck.getRemorque_2().getQuantityLeft());
             }
             
             myTruck.retour();
