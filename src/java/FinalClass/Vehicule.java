@@ -928,8 +928,8 @@ public class Vehicule implements Serializable {
         this.chercherClientPlusProche(listClient, lePlusLoinClient);
         double poids = 0.01;
         double maxPoids = 1;
-        double minPoids = 0.75;
-        double minVariance = 0.5;
+        double minPoids = 0.6;
+        double minVariance;
         if(listClient.size() > 0 ){
             maxPoids =  this.getPrixEntreDeuxLocationsSansServiceTime(myDepot, listClient.get(0)) + listClient.get(0).getPrix_service_time() + this.getPrixEntreDeuxLocationsSansServiceTime(listClient.get(0), myDepot);
         }

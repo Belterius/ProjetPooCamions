@@ -80,11 +80,11 @@ public class Main {
 //        solution2(location,fleet);
 //        solution3(location,fleet);
 //        solution4(location,fleet, nameFiles);
-        solution5(location,fleet, nameFiles);
+//        solution5(location,fleet, nameFiles);
 //        solution6(location,fleet, nameFiles);
 //            loopForSolution(coordinates, fleet, nameFiles);
 //        resultSolution = solution7(location,fleet, nameFiles);
-//        resultSolution = solution8(location,fleet, nameFiles);
+        resultSolution = solution8(location,fleet, nameFiles);
 //        System.out.println("Result solution : " + resultSolution);
 
     }
@@ -128,7 +128,7 @@ public class Main {
             }
             
 //            myTruck.retour();
-                        
+            myTruck = ordonnerTour(myTruck, isDoubleCamion, fleet.getMyFleets().get(2).getCapacity());   
             int j=1;
             for(Action action : myTruck.getActionRealisees()){
 //                System.out.println(action);
