@@ -180,7 +180,9 @@ public class Main {
         
     }
     public static List<Client> ordonnerClient(List<Client> clients, Depot depot){
+        Tour init = new Tour(depot, clients);
         Tour bestTour = permuteClients(clients, 0, depot);
+        System.out.println("Initial : " + init.getTempsTour() + " Final : " + bestTour.getTempsTour());
         return bestTour.getClients();
     }
     

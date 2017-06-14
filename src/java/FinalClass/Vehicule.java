@@ -836,6 +836,7 @@ public class Vehicule implements Serializable {
         double prixTempsTotal =  tempsTotal * FleetParser.getCoutDuree();
         
         return prixDistanceTotal + coeffTemps * prixTempsTotal;
+//        throw new Error("Impossible de calculer le prix si on veut finir tout de suite la tournée");
     }
     
     /**
@@ -928,16 +929,18 @@ public class Vehicule implements Serializable {
         this.chercherClientPlusProche(listClient, lePlusLoinClient);
         double poids = 0.01;
         double maxPoids = 1;
-        double minPoids = 0.6;
+        double minPoids = 0.7;
         double minVariance;
         if(listClient.size() > 0 ){
-            maxPoids =  this.getPrixEntreDeuxLocationsSansServiceTime(myDepot, listClient.get(0)) + listClient.get(0).getPrix_service_time() + this.getPrixEntreDeuxLocationsSansServiceTime(listClient.get(0), myDepot);
+//            maxPoids =  this.getPrixEntreDeuxLocationsSansServiceTime(myDepot, listClient.get(0)) + listClient.get(0).getPrix_service_time() + this.getPrixEntreDeuxLocationsSansServiceTime(listClient.get(0), myDepot);
+            maxPoids =  this.getPrixEntreDeuxLocationsSansServiceTime(myDepot, lePlusLoinClient) + this.getPrixEntreDeuxLocationsSansServiceTime(lePlusLoinClient, myDepot);
         }
         
         //Fin test
         
         for(Client c : listClient){
-            poids = (this.getPrixEntreDeuxLocationsSansServiceTime(myDepot, c) + c.getPrix_service_time() + this.getPrixEntreDeuxLocationsSansServiceTime(c, myDepot)) / maxPoids;
+//            poids = (this.getPrixEntreDeuxLocationsSansServiceTime(myDepot, c) + c.getPrix_service_time() + this.getPrixEntreDeuxLocationsSansServiceTime(c, myDepot)) / maxPoids;
+            poids = (this.getPrixEntreDeuxLocationsSansServiceTime(myDepot, c) + this.getPrixEntreDeuxLocationsSansServiceTime(c, myDepot)) / maxPoids;
              
             //Avoir le coût actuel entre l'origine et la destination
 //            double currentPrice = this.getPrixEntreDeuxLocationsSansServiceTime(action.origineLocation, action.destinationLocation);
@@ -953,11 +956,15 @@ public class Vehicule implements Serializable {
             if(enoughTimeIfInsertBetween(action, c)){
                 if(listMeilleurRentabilite.size() == 0){
                     listMeilleurRentabilite.add(new MeilleurRentabiliteObject(action, c, minVariance * newPrice));
+//                    listMeilleurRentabilite.add(new MeilleurRentabiliteObject(action, c,  newPrice  - currentPrice ));
                 }else{
                    //Vérifie si le prix est vraiment mieux (rentable ?)
                     if( minVariance * newPrice  < listMeilleurRentabilite.get(listMeilleurRentabilite.size() -1).price){
                         listMeilleurRentabilite.add(new MeilleurRentabiliteObject(action, c, minVariance * newPrice));
                     } 
+//                    if( newPrice < currentPrice &&  newPrice  - currentPrice  < listMeilleurRentabilite.get(listMeilleurRentabilite.size() -1).price){
+//                        listMeilleurRentabilite.add(new MeilleurRentabiliteObject(action, c, newPrice  - currentPrice));
+//                    } 
                 }
             } 
 //            poids+=0.002;
