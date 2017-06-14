@@ -5,6 +5,7 @@
  */
 package metier;
 
+import FinalClass.Client;
 import java.io.Serializable;
 import javax.persistence.Basic;
 import javax.persistence.Column;
@@ -63,6 +64,10 @@ public abstract class LocationCSV implements Serializable {
         return coord;
     }
     
-    
+    public long getTimeTo(LocationCSV loc){
+        int i = 2*loc.getCoord().getId()+1;
+        int j = this.getCoord().getId();
+        return DistanceTimesDataCSV.matrix[i][j];
+    }
     
 }

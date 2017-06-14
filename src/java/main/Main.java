@@ -7,6 +7,7 @@ package main;
 
 import FinalClass.Action;
 import FinalClass.Client;
+import FinalClass.Depot;
 import FinalClass.Vehicule;
 import Parser.DistanceTimesCoordinatesParser;
 import Parser.DistanceTimesDataParser;
@@ -24,8 +25,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import metier.LocationCSV;
 import metier.Solution;
 import metier.SolutionIndex;
+import metier.Tour;
 
 /**
  *
@@ -76,12 +79,68 @@ public class Main {
 //        solution2(location,fleet);
 //        solution3(location,fleet);
 //        solution4(location,fleet, nameFiles);
-//        solution5(location,fleet, nameFiles);
+        solution5(location,fleet, nameFiles);
 //        solution6(location,fleet, nameFiles);
 //            loopForSolution(coordinates, fleet, nameFiles);
-        solution7(location,fleet, nameFiles);
+//        solution7(location,fleet, nameFiles);
 
     }
+    
+    public static Vehicule ordonnerTour(Vehicule truck,boolean isDoubleCamion,int capacity){
+        Depot depot = (Depot) truck.getActionRealisees().get(0).getOrigineLocation();
+        List<Client> myClients = new ArrayList<>();
+        for(Action act : truck.getActionRealisees()){
+            if(act.getDestinationLocation() instanceof Client){
+                myClients.add((Client)act.getDestinationLocation());
+            }
+        }
+        List<Client> bestOrderClient = ordonnerClient(myClients, depot);
+        Vehicule myTruck = new Vehicule((Depot)truck.getActionRealisees().get(0).getOrigineLocation(), isDoubleCamion, capacity);
+        for(Client c : bestOrderClient){
+            myTruck.livrer(c);
+        }    
+        myTruck.retour();
+        
+        return myTruck;
+        
+        
+    }
+    public static List<Client> ordonnerClient(List<Client> clients, Depot depot){
+        Tour bestTour = permuteClients(clients, 0, depot);
+        return bestTour.getClients();
+    }
+    
+    public static Tour permuteClients(List<Client> a, int k, Depot d) 
+    {
+        if(a.size() > 11)
+            return new Tour(d, a);
+        
+        Tour bestTour = new Tour();
+        Tour currentTour = new Tour();
+        if (k == a.size()) 
+        {
+            return new Tour(d, a);
+        } 
+        else 
+        {
+            for (int i = k; i < a.size(); i++) 
+            {
+                Client temp = a.get(k);
+                a.set(k, a.get(i));
+                a.set(i, temp);
+ 
+                currentTour = permuteClients(a, k + 1, d);
+                if(currentTour.getTempsTour() < bestTour.getTempsTour()){
+                    bestTour = currentTour;
+                }
+                temp = a.get(k);
+                a.set(k, a.get(i));
+                a.set(i, temp);
+            }
+        }
+        return bestTour;
+    }
+    
     
     public static void loopForSolution(DistanceTimesCoordinatesParser coordinates, FleetParser fleet, String nameFiles){
         LocationParser location = new LocationParser(nameFiles + "/Locations.csv", coordinates.getCoordinates());
@@ -252,12 +311,12 @@ public class Main {
         
         while(location.getMyClients().size() >0)
         {
+            boolean requiereDoubleCamion = false;
             if(location.getMyClients().stream().filter(client -> client.getQuantity() > fleet.getMyFleets().get(2).getCapacity()).count() > 0){
-                myTruck = new Vehicule(location.getMyDepots().get(0),true, fleet.getMyFleets().get(2).getCapacity());
-            }else{
-                myTruck = new Vehicule(location.getMyDepots().get(0),false, fleet.getMyFleets().get(2).getCapacity());
+                requiereDoubleCamion = true;
             }
-              
+            myTruck = new Vehicule(location.getMyDepots().get(0),requiereDoubleCamion, fleet.getMyFleets().get(2).getCapacity());
+
             if(! myTruck.chercherPlusLoinParRapportAuCamionEtLivrer(location.getMyClients())){
                 throw new Error("Plus de livraison possible");
             }
@@ -267,7 +326,7 @@ public class Main {
             }
             
             myTruck.retour();
-            
+            myTruck = ordonnerTour(myTruck, requiereDoubleCamion, fleet.getMyFleets().get(2).getCapacity());
             int j=1;
             for(Action action : myTruck.getActionRealisees()){
                 solution.addSolution(new Solution(i, j, action));

@@ -204,6 +204,28 @@ public class Vehicule implements Serializable {
 //        System.out.println("Restant : " + LocationParser.myClients.size());
         return true;
     }
+    public boolean livrer(Client destination){
+        //Vérifie si le client peut etre livré avec un double remorque ou non ?
+        if(destination.getIsTrainPossible()== 0 && remorque_2 != null &&remorque_2.isAttached){
+//            throw new Error("Impossible de livrer ce client avec un semi remorque");
+            return false;
+        }
+        if(!enoughTime(destination)){//enought time to deliver & comeback
+            return false;
+        }
+        float totalQuantity = remorque_1.getQuantityLeft() + (remorque_2 != null && remorque_2.isAttached ? remorque_2.getQuantityLeft() : 0);
+        if(destination.getQuantity() > totalQuantity){//enought quantity to deliver at once
+            return false;
+        }
+        
+       
+        Action delivery = new Action(currentEmplacement, destination, remorque_1, remorque_2, "NONE");
+        ajouterAction(delivery);
+        timeSpent += delivery.timeSpent;
+        setCurrentEmplacement(destination);
+        
+        return true;
+    }
     
     
     /**
