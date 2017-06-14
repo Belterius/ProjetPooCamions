@@ -911,7 +911,7 @@ public class Vehicule implements Serializable {
         //On finit à -1 car une liste part de 0
 //        List<MeilleurRentabiliteObject> listMeilleurRentabilite = new ArrayList<>();
         for(Action a : this.actionRealisees.subList(1, this.actionRealisees.size())){
-            listMeilleurRentabilite = getBestToInsertRecur(a,listMeilleurRentabilite , listClientToProcess);
+            listMeilleurRentabilite = getBestToInsertRecur2(a,listMeilleurRentabilite , listClientToProcess);
         }
         
         if(listMeilleurRentabilite.size() == 0){
@@ -971,6 +971,52 @@ public class Vehicule implements Serializable {
             }  
         return listMeilleurRentabilite;
     }
+    
+        private List<MeilleurRentabiliteObject> getBestToInsertRecur2(Action action, List<MeilleurRentabiliteObject> listMeilleurRentabilite, List<Client> listClient){
+                
+        //Trier liste
+        this.chercherClientPlusProche(listClient, lePlusLoinClient);
+        double poids = 0.01;
+        double maxPoids = 1;
+        double minPoids = 0.7;
+        double minVariance;
+        if(listClient.size() > 0 ){
+            maxPoids =  this.getPrixEntreDeuxLocationsSansServiceTime(myDepot, lePlusLoinClient) + this.getPrixEntreDeuxLocationsSansServiceTime(lePlusLoinClient, myDepot);
+        }
+        
+        //Fin test
+        
+        for(Client c : listClient){
+            poids = (this.getPrixEntreDeuxLocationsSansServiceTime(myDepot, c) + this.getPrixEntreDeuxLocationsSansServiceTime(c, myDepot)) / maxPoids;
+             
+                         
+            //Avoir le coût actuel entre l'origine et la destination
+            double currentPrice = this.getPrixEntreDeuxLocationsSansServiceTime(action.origineLocation, action.destinationLocation);
+            
+            //Avoir le coût entre destination et interLocation
+            double newPrice = this.getPrixEntreDeuxLocationsSansServiceTime(action.origineLocation, c);
+            newPrice += this.getPrixEntreDeuxLocationsSansServiceTime(c, action.destinationLocation);
+            newPrice += c.getPrix_service_time();
+            
+            //double ajoutPrix = (0.1 + listClient.indexOf(c) * (0.9/listClient.size())) * (newPrice - currentPrice);
+            double ajoutPrix = (0.2 + listClient.indexOf(c) * (0.8/listClient.size())) * (newPrice - currentPrice);
+
+            
+            if(enoughTimeIfInsertBetween(action, c)){
+                if(listMeilleurRentabilite.size() == 0){
+                    listMeilleurRentabilite.add(new MeilleurRentabiliteObject(action, c, ajoutPrix));
+                }else{
+                   //Vérifie si le prix est vraiment mieux (rentable ?)
+                    if( ajoutPrix  < listMeilleurRentabilite.get(listMeilleurRentabilite.size() -1).price){
+                        listMeilleurRentabilite.add(new MeilleurRentabiliteObject(action, c, ajoutPrix));
+                    } 
+                }
+            } 
+            }  
+        return listMeilleurRentabilite;
+    }
+    
+    
     
     /**
      * A-t-on assez de temps pour réaliser la livraison et pour retourner ensuite au dépot
