@@ -54,9 +54,9 @@ public class Main {
 //        String nameFiles = "medium_normal";
 //        String nameFiles = "medium_all_without_trailer";
 //        String nameFiles = "medium_all_with_trailer";
-//        String nameFiles = "large_normal";
+        String nameFiles = "large_normal";
 //        String nameFiles = "large_all_without_trailer";
-        String nameFiles = "large_all_with_trailer";
+//        String nameFiles = "large_all_with_trailer";
         
         DistanceTimesCoordinatesParser coordinates = new DistanceTimesCoordinatesParser("dima/DistanceTimesCoordinates.csv");
         DistanceTimesDataParser data = new DistanceTimesDataParser("dima/DistanceTimesData.csv");
@@ -75,15 +75,16 @@ public class Main {
         to = Paths.get("checker/SwapActions.csv"); //convert from String to Path
         Files.copy(from, to, StandardCopyOption.REPLACE_EXISTING);
         
+        double totalMontant = 0;
 //        solution1(location,fleet );
 //        solution2(location,fleet);
 //        solution3(location,fleet);
 //        solution4(location,fleet, nameFiles);
-        solution5(location,fleet, nameFiles);
+        totalMontant = solution5(location,fleet, nameFiles);
 //        solution6(location,fleet, nameFiles);
 //            loopForSolution(coordinates, fleet, nameFiles);
-//        solution7(location,fleet, nameFiles);
-
+//        totalMontant = solution7(location,fleet, nameFiles);
+        System.out.println("TOtal montant : " + totalMontant);
     }
     
     public static Vehicule ordonnerTour(Vehicule truck,boolean isDoubleCamion,int capacity){
@@ -108,7 +109,7 @@ public class Main {
     public static List<Client> ordonnerClient(List<Client> clients, Depot depot){
         Tour init = new Tour(depot, clients);
         Tour bestTour = permuteClients(clients, 0, depot);
-        System.out.println("Initial : " + init.getTempsTour() + " Final : " + bestTour.getTempsTour());
+//        System.out.println("Initial : " + init.getTempsTour() + " Final : " + bestTour.getTempsTour());
         return bestTour.getClients();
     }
     
@@ -219,9 +220,11 @@ public class Main {
             //Comportement comme avant
             while(myTruck.chercherPlusProcheParRapportPlusLoinDestinationEtLivrer(location.getMyClients(), clientLePlusLoin)){
             }
-            
+
             myTruck.retour();
-                        
+                
+            myTruck.ordonnerTournée(isDoubleCamion, fleet.getMyFleets().get(2).getCapacity());
+            
             int j=1;
             for(Action action : myTruck.getActionRealisees()){
 //                System.out.println(action);
@@ -305,7 +308,7 @@ public class Main {
      * @param location
      * @param fleet 
      */
-    public static void solution5(LocationParser location, FleetParser fleet, String nameFiles) throws IOException{
+    public static double solution5(LocationParser location, FleetParser fleet, String nameFiles) throws IOException{
         SolutionParser solution = new SolutionParser();
         List<Solution> mySolutions = new ArrayList<>();
         Vehicule myTruck;
@@ -313,11 +316,11 @@ public class Main {
         
         while(location.getMyClients().size() >0)
         {
-            boolean requiereDoubleCamion = false;
-            if(location.getMyClients().stream().filter(client -> client.getQuantity() > fleet.getMyFleets().get(2).getCapacity()).count() > 0){
-                requiereDoubleCamion = true;
-            }
-            myTruck = new Vehicule(location.getMyDepots().get(0),requiereDoubleCamion, fleet.getMyFleets().get(2).getCapacity());
+//            boolean requiereDoubleCamion = false;
+//            if(location.getMyClients().stream().filter(client -> client.getQuantity() > fleet.getMyFleets().get(2).getCapacity()).count() > 0){
+//                requiereDoubleCamion = true;
+//            }
+            myTruck = new Vehicule(location.getMyDepots().get(0),false, fleet.getMyFleets().get(2).getCapacity());
 
             if(! myTruck.chercherPlusLoinParRapportAuCamionEtLivrer(location.getMyClients())){
                 throw new Error("Plus de livraison possible");
@@ -328,13 +331,13 @@ public class Main {
             }
             
             myTruck.retour();
-            myTruck = ordonnerTour(myTruck, requiereDoubleCamion, fleet.getMyFleets().get(2).getCapacity());
+            myTruck = ordonnerTour(myTruck, myTruck.getRemorque_2() != null, fleet.getMyFleets().get(2).getCapacity());
             int j=1;
             for(Action action : myTruck.getActionRealisees()){
                 solution.addSolution(new Solution(i, j, action));
                 j++;
             }
-            //solution.addSolution(myTruck);
+            solution.addSolution(myTruck);
             i++;
         }
         //solution.toCsvFinal();
@@ -348,6 +351,8 @@ public class Main {
         }
         
         factory.getJpaSolutionIndexDao().create(sIndex);
+        
+        return SolutionParser.getResultat(solution.myVehicules);
     }
     
      /**

@@ -111,6 +111,15 @@ public class Vehicule implements Serializable {
         demarrer(startLocation);
     }
     
+    /**
+     * Constructor
+     * @param startLocation - Il démarre normalement au dépot
+     * @param doubleRemorque - Est-ce que c'est une double remorque ou non ?
+     * @param sizeRemorque  - Avoir la capacité max d'une remorque
+     */
+    public Vehicule(Depot startLocation, float sizeRemorque){
+        initVehicule(startLocation, false, sizeRemorque);
+    }    
     
     public LocationCSV getCurrentEmplacement() {
         return currentEmplacement;
@@ -168,6 +177,8 @@ public class Vehicule implements Serializable {
      * @param checkRentability
      */
     public boolean livrer(Client destination, List<Client> listClient, boolean checkRentability){
+        
+        
         //Vérifie si le client peut etre livré avec un double remorque ou non ?
         if(destination.getIsTrainPossible()== 0 && remorque_2 != null &&remorque_2.isAttached){
 //            throw new Error("Impossible de livrer ce client avec un semi remorque");
@@ -178,7 +189,23 @@ public class Vehicule implements Serializable {
         }
         float totalQuantity = remorque_1.getQuantityLeft() + (remorque_2 != null && remorque_2.isAttached ? remorque_2.getQuantityLeft() : 0);
         if(destination.getQuantity() > totalQuantity){//enought quantity to deliver at once
-            return false;
+//            System.out.println("OK1");
+            if(destination.getQuantity() < totalQuantity + FleetParser.getCapacite()&& remorque_2 == null){
+//                System.out.println("OK2");
+                if(timeSpent < FleetCSV.getOperating_time() * 3 / 4){
+//                    System.out.println("OK3");
+                    if(isTrainPossibleWithEveryCurrentClients()){
+                        this.remorque_2 = new Remorque(2, currentEmplacement,true,FleetParser.getCapacite());
+                        System.out.println("OK4");
+                    }else{
+                        return false;
+                    }
+                }else{
+                    return false;
+                }
+            }else{
+                return false;
+            }
         }
         
         //Est-ce que c'est rentable de livrer le client lors de cette tournée ?
@@ -224,6 +251,15 @@ public class Vehicule implements Serializable {
         timeSpent += delivery.timeSpent;
         setCurrentEmplacement(destination);
         
+        return true;
+    }
+    
+    private boolean isTrainPossibleWithEveryCurrentClients(){
+        for(Action a : this.actionRealisees){
+            if(a.destinationLocation instanceof Client && ((Client)a.destinationLocation).getIsTrainPossible() == 0){
+                return false;
+            }
+        }
         return true;
     }
     
