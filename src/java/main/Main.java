@@ -37,8 +37,8 @@ import metier.Tour;
 public class Main {
 
     
-    public static double step  = 0.001;
-    public static double ELOIGNEMENT_DROITE = 0.001;
+    public static double step  = 0.1;
+    public static double ELOIGNEMENT_DROITE = 1.1;
     public static double best_eloignement = 0;
     public static double best_score = 999999999;//999 999 999
     
@@ -85,7 +85,7 @@ public class Main {
 //            loopForSolution(coordinates, fleet, nameFiles);
 //        resultSolution = solution7(location,fleet, nameFiles);
         resultSolution = solution8(location,fleet, nameFiles);
-//        System.out.println("Result solution : " + resultSolution);
+        System.out.println("Result solution : " + resultSolution);
 
     }
     
@@ -101,12 +101,12 @@ public class Main {
         Vehicule myTruck;
         Boolean isDoubleCamion = false;
         int i= 1;
-        while(location.getMyClients().size() >0)
+        while(location.getMyClients().size() >0 )
         {
 //            System.out.println("Size : " + location.getMyClients().size());
-            System.out.println("New camion");
-            isDoubleCamion = (location.getMyClients().stream().filter(client -> client.getQuantity() > fleet.getMyFleets().get(2).getCapacity()).count() > 0); 
-            myTruck = new Vehicule(location.getMyDepots().get(0),isDoubleCamion, fleet.getMyFleets().get(2).getCapacity());
+//            System.out.println("New camion");
+//            isDoubleCamion = (location.getMyClients().stream().filter(client -> client.getQuantity() > fleet.getMyFleets().get(2).getCapacity()).count() > 0); 
+            myTruck = new Vehicule(location.getMyDepots().get(0),false, fleet.getMyFleets().get(2).getCapacity());
             
             //Avoir le plus loin
 //            Client clientLePlusLoin = myTruck.trierPlusLoinParRapportDepot(location.getMyClients());
@@ -115,20 +115,20 @@ public class Main {
 //            }
 //            
 //            myTruck.livrer(clientLePlusLoin, location.getMyClients(), true);
-            
+                        
             if(! myTruck.chercherPlusLoinParRapportAuCamionEtLivrer(location.getMyClients())){
                 throw new Error("Plus de livraison possible");
             }
             myTruck.retour();
             
             //Comportement comme avant
-            while(myTruck.getBestToInsert(location.getMyClients())){
-                System.out.println("Size : " + location.getMyClients().size());
+            while(myTruck.getBestToInsert(location.getMyClients(), ELOIGNEMENT_DROITE)){
+//                System.out.println("Size : " + location.getMyClients().size());
 //                System.out.println("Quantité restant : \t Remorque 1 : " + myTruck.getRemorque_1().getQuantityLeft() + "\t Remorque 2 : " + myTruck.getRemorque_2().getQuantityLeft());
             }
             
 //            myTruck.retour();
-            myTruck = ordonnerTour(myTruck, isDoubleCamion, fleet.getMyFleets().get(2).getCapacity());   
+            myTruck = ordonnerTour(myTruck, myTruck.getRemorque_2() != null, fleet.getMyFleets().get(2).getCapacity());   
             int j=1;
             for(Action action : myTruck.getActionRealisees()){
 //                System.out.println(action);
@@ -182,7 +182,7 @@ public class Main {
     public static List<Client> ordonnerClient(List<Client> clients, Depot depot){
         Tour init = new Tour(depot, clients);
         Tour bestTour = permuteClients(clients, 0, depot);
-        System.out.println("Initial : " + init.getTempsTour() + " Final : " + bestTour.getTempsTour());
+//        System.out.println("Initial : " + init.getTempsTour() + " Final : " + bestTour.getTempsTour());
         return bestTour.getClients();
     }
     
@@ -223,11 +223,13 @@ public class Main {
         List<Client> myClients = new ArrayList<>(location.getMyClients());
         double totalMontant = 0;
         try {
-            while(ELOIGNEMENT_DROITE < 0.5){
+            while(ELOIGNEMENT_DROITE < 1.5){
                 LocationParser.myClients = new ArrayList<Client>(myClients);
                 System.out.println("Eloignement : " + ELOIGNEMENT_DROITE);
 
-                    totalMontant = solution7(location,fleet, nameFiles);
+                    totalMontant = solution8(location,fleet, nameFiles);
+                    
+                    System.out.println("Result solution : " + totalMontant);
                     
                     if(best_score > totalMontant){
                         best_score = totalMontant;
@@ -241,7 +243,7 @@ public class Main {
             
             ELOIGNEMENT_DROITE = best_eloignement;
             LocationParser.myClients = new ArrayList<Client>(myClients);
-            solution7(location,fleet, nameFiles);
+            solution8(location,fleet, nameFiles);
             
         } catch (IOException ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);

@@ -171,15 +171,24 @@ public class Vehicule implements Serializable {
      */
     public boolean livrer(Client destination, List<Client> listClient, boolean checkRentability){
       
-        if(!checkIfDeliverPossible(destination)){
+        
+        if(! checkIfDeliverWithTheSameTruckType(destination) || ! enoughTimeIfInsertAfter(destination)){
+            return false;
+        }
+        
+//        if(!checkIfDeliverPossible(destination)){
+//            return false;
+//        }
+         
+        if(!testInsertNewClient(destination)){
             return false;
         }
         
         //Est-ce que c'est rentable de livrer le client lors de cette tournée ?
-        if(checkRentability && this.actionRealisees.size() > 2 &&  isRentableLivrerClient(destination, myDepot, currentEmplacement)){
-            return false;
-        }
-        
+//        if(checkRentability && this.actionRealisees.size() > 2 &&  isRentableLivrerClient(destination, myDepot, currentEmplacement)){
+//            return false;
+//        }
+         
 //        System.out.println("Quantité à livrer : " + destination.getQuantity());
         Action delivery = new Action(currentEmplacement, destination, remorque_1, remorque_2, "NONE");
         ajouterAction(delivery);
@@ -195,16 +204,15 @@ public class Vehicule implements Serializable {
             listClient.remove(destination);
         }
         
-        if(destination.getLocation_id().equals("C56")){
-            System.out.println("OK");
-        }
-        
 //        System.out.println("Livraison !");
 //        System.out.println("Restant : " + LocationParser.myClients.size());
 //        System.out.println("Quantité restant : \t Remorque 1 : " + this.getRemorque_1().getQuantityLeft() + "\t Remorque 2 : " + this.getRemorque_2().getQuantityLeft());
             
         return true;
     }
+    
+    
+    
     
     /**
      * Livre un client
@@ -228,10 +236,7 @@ public class Vehicule implements Serializable {
         //Enlever le client de la liste des clients à livrer   
         
         LocationParser.myClients.remove(destination);
-        
-        if(destination.getLocation_id().equals("C56")){
-            System.out.println("OK");
-        }
+       
         
 //        System.out.println("Livraison !");
 //        System.out.println("Restant : " + LocationParser.myClients.size());
@@ -498,6 +503,9 @@ public class Vehicule implements Serializable {
         
         for(Client c : chercherClientPlusLoin(listeClient, this.currentEmplacement)){
             if(livrer(c, listeClient, false)){
+                if(c.getLocation_id().equals("C32")){
+                    System.out.println("ok");
+                }
                 lePlusLoinClient = c;
                 return true;
             }
@@ -871,13 +879,14 @@ public class Vehicule implements Serializable {
      * @param clientToCompare
      * @return 
      */
-    public boolean getBestToInsert(List<Client> listClient){
+    public boolean getBestToInsert(List<Client> listClient, double minPoids){
        
         List<Client> listClientToProcess = new ArrayList<>(listClient);
         Iterator<Client> i = listClientToProcess.iterator();
         while (i.hasNext()) {
             Client c = i.next();
-            if( ! this.checkIfDeliverWithTheSameTruckType(c) || ! this.checkIfDeliverWithEnoughQuantity(c)){
+//            if( ! this.checkIfDeliverWithTheSameTruckType(c) || ! this.checkIfDeliverWithEnoughQuantity(c)){
+            if( ! this.checkIfDeliverWithTheSameTruckType(c)){
                 i.remove();
             }
         }
@@ -911,25 +920,75 @@ public class Vehicule implements Serializable {
         //On finit à -1 car une liste part de 0
 //        List<MeilleurRentabiliteObject> listMeilleurRentabilite = new ArrayList<>();
         for(Action a : this.actionRealisees.subList(1, this.actionRealisees.size())){
-            listMeilleurRentabilite = getBestToInsertRecur2(a,listMeilleurRentabilite , listClientToProcess);
+            listMeilleurRentabilite = getBestToInsertRecur(a,listMeilleurRentabilite , listClientToProcess, minPoids);
         }
         
         if(listMeilleurRentabilite.size() == 0){
             return false;
         }
         
-        insertNewClient(listMeilleurRentabilite.get(listMeilleurRentabilite.size()-1));
+        int j = 0;
+        
+        while(!testInsertNewClient(((MeilleurRentabiliteObject)listMeilleurRentabilite.get((listMeilleurRentabilite.size()-1-j))).clientToInsert)){
+            j++;
+            if(j >= listMeilleurRentabilite.size()){
+                return false;
+            }
+        }  
+        
+        insertNewClient(listMeilleurRentabilite.get(listMeilleurRentabilite.size()-1-j));
         
         return true;
     }
     
-    private List<MeilleurRentabiliteObject> getBestToInsertRecur(Action action, List<MeilleurRentabiliteObject> listMeilleurRentabilite, List<Client> listClient){
-                
+    private boolean testInsertNewClient(Client destination){
+        float totalQuantity = remorque_1.getQuantityLeft() + (remorque_2 != null && remorque_2.isAttached ? remorque_2.getQuantityLeft() : 0);
+        if(destination.getQuantity() > totalQuantity){//enought quantity to deliver at once
+//            System.out.println("OK1");
+            if(destination.getQuantity() < totalQuantity + FleetParser.getCapacite()&& remorque_2 == null){
+//                System.out.println("OK2");
+                if(timeSpent < FleetCSV.getOperating_time() * 2 / 3){
+//                    System.out.println("OK3");
+                    if(isTrainPossibleWithEveryCurrentClients() && destination.getIsTrainPossible() == 1){
+                        this.remorque_2 = new Remorque(2, currentEmplacement,true,FleetParser.getCapacite());
+                        devientDoubleCamionSurTouteLaTournee();
+//                        System.out.println("OK4");
+                    }else{
+                        return false;
+                    }
+                }else{
+                    return false;
+                }
+            }else{
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    private boolean isTrainPossibleWithEveryCurrentClients(){
+        for(Action a : this.actionRealisees){
+            if(a.destinationLocation instanceof Client && ((Client)a.destinationLocation).getIsTrainPossible() == 0){
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    private void devientDoubleCamionSurTouteLaTournee(){
+         for(Action a : this.actionRealisees){
+            a.id_Second_Remorque = 2;
+            a.semi_Trailer_Attached = true;
+        }
+    }
+    
+    private List<MeilleurRentabiliteObject> getBestToInsertRecur(Action action, List<MeilleurRentabiliteObject> listMeilleurRentabilite, List<Client> listClient, double minPoids){
+                   
         //Trier liste
         this.chercherClientPlusProche(listClient, lePlusLoinClient);
         double poids = 0.01;
         double maxPoids = 1;
-        double minPoids = 0.7;
+//        double minPoids = 0.5;
         double minVariance;
         if(listClient.size() > 0 ){
 //            maxPoids =  this.getPrixEntreDeuxLocationsSansServiceTime(myDepot, listClient.get(0)) + listClient.get(0).getPrix_service_time() + this.getPrixEntreDeuxLocationsSansServiceTime(listClient.get(0), myDepot);
@@ -1037,7 +1096,7 @@ public class Vehicule implements Serializable {
     }
     
     private void insertNewClient(MeilleurRentabiliteObject clientToInsert){
-                
+            
 //        if(clientToInsert.actionToModify == null){
             //Placer à la fin => un simple livrer
 //            this.livrerWithoutCheckRentability(clientToInsert.clientToInsert);
