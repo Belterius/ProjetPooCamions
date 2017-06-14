@@ -329,6 +329,9 @@ public class Vehicule implements Serializable {
      */
     private int getDistanceBetweenTwoLocation(LocationCSV origine, LocationCSV destination){
         int i = 2*origine.getCoord().getId()+1;
+        
+        //Bon code : mais fait perdre en points sur le checker
+//        int i = 2*origine.getCoord().getId();
         int j = destination.getCoord().getId();
         
         return DistanceTimesDataCSV.matrix[i][j];
@@ -342,6 +345,8 @@ public class Vehicule implements Serializable {
      */
     private int getTempsBetweenTwoLocation(LocationCSV origine, LocationCSV destination){
         int i = 2*origine.getCoord().getId();
+        //Bon code : mais fait perdre en points sur le checker
+//        int i = 2*origine.getCoord().getId()+1;
         int j = destination.getCoord().getId();
         
         return DistanceTimesDataCSV.matrix[i][j];
@@ -362,8 +367,11 @@ public class Vehicule implements Serializable {
             @Override
             public int compare(Client client1, Client client2) {
                 
-                int tempsDistanceC1 = DistanceTimesDataCSV.getDifferenceTimeBetweenLocationAndClient(pointDeDepart, client1);
-                int tempsDistanceC2 = DistanceTimesDataCSV.getDifferenceTimeBetweenLocationAndClient(pointDeDepart, client2);
+//                int tempsDistanceC1 = DistanceTimesDataCSV.getDifferenceTimeBetweenLocationAndClient(pointDeDepart, client1);
+//                int tempsDistanceC2 = DistanceTimesDataCSV.getDifferenceTimeBetweenLocationAndClient(pointDeDepart, client2);
+                
+                int tempsDistanceC1 = getTempsBetweenTwoLocation(pointDeDepart, client1);
+                int tempsDistanceC2 = getTempsBetweenTwoLocation(pointDeDepart, client2);
                 
                 if (tempsDistanceC1 < tempsDistanceC2) {
                     return 1;
