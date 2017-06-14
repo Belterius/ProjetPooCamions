@@ -194,8 +194,9 @@ public class Vehicule implements Serializable {
 //                System.out.println("OK2");
                 if(timeSpent < FleetCSV.getOperating_time() * 3 / 4){
 //                    System.out.println("OK3");
-                    if(isTrainPossibleWithEveryCurrentClients()){
+                    if(isTrainPossibleWithEveryCurrentClients() && destination.getIsTrainPossible() == 1){
                         this.remorque_2 = new Remorque(2, currentEmplacement,true,FleetParser.getCapacite());
+                        devientDoubleCamionSurTouteLaTournee();
                         System.out.println("OK4");
                     }else{
                         return false;
@@ -206,6 +207,9 @@ public class Vehicule implements Serializable {
             }else{
                 return false;
             }
+        }
+        if(destination.getLocation_id().equals("C1")){
+            System.out.println("OK");
         }
         
         //Est-ce que c'est rentable de livrer le client lors de cette tournée ?
@@ -263,6 +267,12 @@ public class Vehicule implements Serializable {
         return true;
     }
     
+    private void devientDoubleCamionSurTouteLaTournee(){
+         for(Action a : this.actionRealisees){
+            a.id_Second_Remorque = 2;
+            a.semi_Trailer_Attached = true;
+        }
+    }
     
     /**
      * Livre un client
