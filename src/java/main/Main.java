@@ -54,9 +54,9 @@ public class Main {
 //        String nameFiles = "small_all_without_trailer";
 //        String nameFiles = "small_all_with_trailer";
 //        String nameFiles = "medium_normal";
-//        String nameFiles = "medium_all_without_trailer";
+        String nameFiles = "medium_all_without_trailer";
 //        String nameFiles = "medium_all_with_trailer";
-        String nameFiles = "large_normal";
+//        String nameFiles = "large_normal";
 //        String nameFiles = "large_all_without_trailer";
 //        String nameFiles = "large_all_with_trailer"; 
         
@@ -434,7 +434,7 @@ public class Main {
             }else{
                 myTruck = new Vehicule(location.getMyDepots().get(0),false, fleet.getMyFleets().get(2).getCapacity());
             }
-              
+            
             if(! myTruck.chercherPlusLoinParRapportAuCamionEtLivrer(location.getMyClients())){
                 throw new Error("Plus de livraison possible");
             }
@@ -477,12 +477,16 @@ public class Main {
         
         while(location.getMyClients().size() >0)
         {
-            if(location.getMyClients().stream().filter(client -> client.getQuantity() > fleet.getMyFleets().get(2).getCapacity()).count() > 0){
-                myTruck = new Vehicule(location.getMyDepots().get(0),true, fleet.getMyFleets().get(2).getCapacity());
-            }else{
-                myTruck = new Vehicule(location.getMyDepots().get(0),false, fleet.getMyFleets().get(2).getCapacity());
-            }
+//            if(location.getMyClients().stream().filter(client -> client.getQuantity() > fleet.getMyFleets().get(2).getCapacity()).count() > 0){
+//                myTruck = new Vehicule(location.getMyDepots().get(0),true, fleet.getMyFleets().get(2).getCapacity());
+//            }else{
+//                myTruck = new Vehicule(location.getMyDepots().get(0),false, fleet.getMyFleets().get(2).getCapacity());
+//            }
               
+            
+            myTruck = new Vehicule(location.getMyDepots().get(0),false, fleet.getMyFleets().get(2).getCapacity());
+              
+            
             if(! myTruck.chercherPlusLoinParRapportAuCamionEtLivrer(location.getMyClients())){
                 throw new Error("Plus de livraison possible");
             }
@@ -492,6 +496,9 @@ public class Main {
             }
             
             myTruck.retour();
+            
+            
+//            myTruck = ordonnerTour(myTruck, myTruck.getRemorque_2() != null, fleet.getMyFleets().get(2).getCapacity());
             
             solution.addSolution(myTruck);
         }
