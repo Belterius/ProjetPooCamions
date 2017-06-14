@@ -197,7 +197,7 @@ public class Vehicule implements Serializable {
                     if(isTrainPossibleWithEveryCurrentClients() && destination.getIsTrainPossible() == 1){
                         this.remorque_2 = new Remorque(2, currentEmplacement,true,FleetParser.getCapacite());
                         devientDoubleCamionSurTouteLaTournee();
-                        System.out.println("OK4");
+//                        System.out.println("OK4");
                     }else{
                         return false;
                     }
@@ -207,9 +207,6 @@ public class Vehicule implements Serializable {
             }else{
                 return false;
             }
-        }
-        if(destination.getLocation_id().equals("C1")){
-            System.out.println("OK");
         }
         
         //Est-ce que c'est rentable de livrer le client lors de cette tournée ?

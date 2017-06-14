@@ -80,11 +80,13 @@ public class Main {
 //        solution2(location,fleet);
 //        solution3(location,fleet);
 //        solution4(location,fleet, nameFiles);
-//        totalMontant = solution5(location,fleet, nameFiles);
 //        solution6(location,fleet, nameFiles);
 //            loopForSolution(coordinates, fleet, nameFiles);
 //        totalMontant = solution7(location,fleet, nameFiles);
-//        System.out.println("TOtal montant : " + totalMontant);
+
+        //Le bon algorithme :
+        totalMontant = solution5(location,fleet, nameFiles);
+        System.out.println("TOtal montant : " + totalMontant);
 
 //        JpaFactory myFactory = new JpaFactory();
 //        List<Vehicule> myTrucks = myFactory.getJpaSolutionIndexDao().findAll().get(0).databaseToEntities(location, fleet);
