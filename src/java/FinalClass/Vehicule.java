@@ -61,7 +61,7 @@ public class Vehicule implements Serializable {
     @ManyToOne(optional = false)
     public Depot myDepot;
     
-    
+    public Client lePlusLoinClient;
     
     @JoinColumn(name = "CURRENTEMPLACEMENT", referencedColumnName = "IDLOCATION")
     @ManyToOne(optional = false)
@@ -476,6 +476,7 @@ public class Vehicule implements Serializable {
         
         for(Client c : chercherClientPlusLoin(listeClient, this.currentEmplacement)){
             if(livrer(c, listeClient, false)){
+                lePlusLoinClient = c;
                 return true;
             }
         }
@@ -799,7 +800,7 @@ public class Vehicule implements Serializable {
     public double getPrixEntreDeuxLocationsSansServiceTime(LocationCSV pointDeDepart, LocationCSV pointArrivee){
          
         
-        double coeffTemps = 10;
+        double coeffTemps = 1;
         //Si service
         //Distance
         int distanceCurrentLocationToDestination = getDistanceBetweenTwoLocation(pointDeDepart, pointArrivee);
@@ -882,48 +883,64 @@ public class Vehicule implements Serializable {
 //        
 //        }
             
-        MeilleurRentabiliteObject meilleurRentabilite = null;
+        List<MeilleurRentabiliteObject> listMeilleurRentabilite = new ArrayList<>();
         //On commence à 1 car le 0 c'est que le dépot
         //On finit à -1 car une liste part de 0
 //        List<MeilleurRentabiliteObject> listMeilleurRentabilite = new ArrayList<>();
         for(Action a : this.actionRealisees.subList(1, this.actionRealisees.size())){
-            meilleurRentabilite = getBestToInsertRecur(a,meilleurRentabilite , listClientToProcess);
+            listMeilleurRentabilite = getBestToInsertRecur(a,listMeilleurRentabilite , listClientToProcess);
         }
         
-        if(meilleurRentabilite == null){
+        if(listMeilleurRentabilite.size() == 0){
             return false;
         }
         
-        insertNewClient(meilleurRentabilite);
+        insertNewClient(listMeilleurRentabilite.get(listMeilleurRentabilite.size()-1));
         
         return true;
     }
     
-    private MeilleurRentabiliteObject getBestToInsertRecur(Action action, MeilleurRentabiliteObject meilleurRentabilite, List<Client> listClient){
+    private List<MeilleurRentabiliteObject> getBestToInsertRecur(Action action, List<MeilleurRentabiliteObject> listMeilleurRentabilite, List<Client> listClient){
+                
+        //Trier liste
+        this.chercherClientPlusProche(listClient, lePlusLoinClient);
+        double poids = 0.01;
+        double maxPoids = 1;
+        double minPoids = 0.75;
+        double minVariance = 0.5;
+        if(listClient.size() > 0 ){
+            maxPoids =  this.getPrixEntreDeuxLocationsSansServiceTime(myDepot, listClient.get(0)) + listClient.get(0).getPrix_service_time() + this.getPrixEntreDeuxLocationsSansServiceTime(listClient.get(0), myDepot);
+        }
+        
+        //Fin test
         
         for(Client c : listClient){
-                        
+            poids = (this.getPrixEntreDeuxLocationsSansServiceTime(myDepot, c) + c.getPrix_service_time() + this.getPrixEntreDeuxLocationsSansServiceTime(c, myDepot)) / maxPoids;
+             
             //Avoir le coût actuel entre l'origine et la destination
-            double currentPrice = this.getPrixEntreDeuxLocationsSansServiceTime(action.origineLocation, action.destinationLocation);
+//            double currentPrice = this.getPrixEntreDeuxLocationsSansServiceTime(action.origineLocation, action.destinationLocation);
             
             //Avoir le coût entre destination et interLocation
             double newPrice = this.getPrixEntreDeuxLocationsSansServiceTime(action.origineLocation, c);
             newPrice += this.getPrixEntreDeuxLocationsSansServiceTime(c, action.destinationLocation);
-            newPrice += c.getPrix_service_time();
+//            newPrice += c.getPrix_service_time();
             
             //Vérifier si on a assez de temps pour faire le détour ! 
+            minVariance = (1 / poids > minPoids ? 1/ poids : minPoids);
+            
             if(enoughTimeIfInsertBetween(action, c)){
-                if(meilleurRentabilite == null){
-                    meilleurRentabilite = new MeilleurRentabiliteObject(action, c, newPrice - currentPrice);
+                if(listMeilleurRentabilite.size() == 0){
+                    listMeilleurRentabilite.add(new MeilleurRentabiliteObject(action, c, minVariance * newPrice));
                 }else{
                    //Vérifie si le prix est vraiment mieux (rentable ?)
-                    if(newPrice - currentPrice < meilleurRentabilite.price){
-                        meilleurRentabilite = new MeilleurRentabiliteObject(action, c, newPrice - currentPrice);
+                    if( minVariance * newPrice  < listMeilleurRentabilite.get(listMeilleurRentabilite.size() -1).price){
+                        listMeilleurRentabilite.add(new MeilleurRentabiliteObject(action, c, minVariance * newPrice));
                     } 
                 }
-            }            
-        }  
-        return meilleurRentabilite;
+            } 
+//            poids+=0.002;
+            }  
+        return listMeilleurRentabilite;
     }
     
     /**
