@@ -316,6 +316,7 @@ public class Main {
         
         while(location.getMyClients().size() >0)
         {
+            System.out.println("Size : " + location.getMyClients().size());
 //            boolean requiereDoubleCamion = false;
 //            if(location.getMyClients().stream().filter(client -> client.getQuantity() > fleet.getMyFleets().get(2).getCapacity()).count() > 0){
 //                requiereDoubleCamion = true;
@@ -331,7 +332,8 @@ public class Main {
             }
             
             myTruck.retour();
-            myTruck = ordonnerTour(myTruck, myTruck.getRemorque_2() != null, fleet.getMyFleets().get(2).getCapacity());
+            System.out.println("distanceSpent : " + myTruck.getDistanceSpent());
+//            myTruck = ordonnerTour(myTruck, myTruck.getRemorque_2() != null, fleet.getMyFleets().get(2).getCapacity());
             int j=1;
             for(Action action : myTruck.getActionRealisees()){
                 solution.addSolution(new Solution(i, j, action));
@@ -369,6 +371,7 @@ public class Main {
         
         while(location.getMyClients().size() >0)
         {
+            System.out.println("Size : " + location.getMyClients().size());
             if(location.getMyClients().stream().filter(client -> client.getQuantity() > fleet.getMyFleets().get(2).getCapacity()).count() > 0){
                 myTruck = new Vehicule(location.getMyDepots().get(0),true, fleet.getMyFleets().get(2).getCapacity());
             }else{

@@ -82,7 +82,15 @@ public class Vehicule implements Serializable {
     private List<Action> actionRealisees;
     
     private float timeSpent;
+    
+    private float distanceSpent;
 
+    private boolean canTestSubVehicule;
+    
+    public float getDistanceSpent() {
+        return distanceSpent;
+    }
+    
     protected Vehicule() {
     }
     
@@ -98,6 +106,7 @@ public class Vehicule implements Serializable {
     }
     
     private void initVehicule(Depot startLocation, boolean doubleRemorque, float sizeRemorque){
+        canTestSubVehicule = true;
         actionRealisees = new ArrayList<Action>();
         remorque_1 = new Remorque(1, startLocation, true, sizeRemorque);
         if(doubleRemorque){
@@ -166,6 +175,7 @@ public class Vehicule implements Serializable {
         Action back = new Action(currentEmplacement, this.myDepot, remorque_1, remorque_2, "NONE");
         ajouterAction(back);
         timeSpent += back.getTimeSpent();
+        distanceSpent += back.distanceSpent;
         setCurrentEmplacement(this.myDepot);
         return true;
     }
@@ -190,14 +200,15 @@ public class Vehicule implements Serializable {
         float totalQuantity = remorque_1.getQuantityLeft() + (remorque_2 != null && remorque_2.isAttached ? remorque_2.getQuantityLeft() : 0);
         if(destination.getQuantity() > totalQuantity){//enought quantity to deliver at once
 //            System.out.println("OK1");
-            if(destination.getQuantity() < totalQuantity + FleetParser.getCapacite()&& remorque_2 == null){
+            if(!listClient.isEmpty() && canTestSubVehicule && destination.getQuantity() < totalQuantity + FleetParser.getCapacite()&& remorque_2 == null){
 //                System.out.println("OK2");
-                if(timeSpent < FleetCSV.getOperating_time() * 3 / 4){
+                if(isRentableChangerCamionEnDoubleCamion(destination, listClient)){
 //                    System.out.println("OK3");
                     if(isTrainPossibleWithEveryCurrentClients() && destination.getIsTrainPossible() == 1){
                         this.remorque_2 = new Remorque(2, currentEmplacement,true,FleetParser.getCapacite());
                         devientDoubleCamionSurTouteLaTournee();
-                        System.out.println("OK4");
+//                        System.out.println("OK4");
+//                        return true;
                     }else{
                         return false;
                     }
@@ -208,9 +219,6 @@ public class Vehicule implements Serializable {
                 return false;
             }
         }
-        if(destination.getLocation_id().equals("C1")){
-            System.out.println("OK");
-        }
         
         //Est-ce que c'est rentable de livrer le client lors de cette tournée ?
         if(checkRentability && this.actionRealisees.size() > 2 &&  isRentableLivrerClient(destination)){
@@ -220,6 +228,7 @@ public class Vehicule implements Serializable {
         Action delivery = new Action(currentEmplacement, destination, remorque_1, remorque_2, "NONE");
         ajouterAction(delivery);
         timeSpent += delivery.timeSpent;
+        distanceSpent += delivery.distanceSpent;
         setCurrentEmplacement(destination);
         
         //Enlever le client de la liste des clients à livrer   
@@ -249,13 +258,64 @@ public class Vehicule implements Serializable {
             return false;
         }
         
-       
         Action delivery = new Action(currentEmplacement, destination, remorque_1, remorque_2, "NONE");
         ajouterAction(delivery);
         timeSpent += delivery.timeSpent;
         setCurrentEmplacement(destination);
         
         return true;
+    }
+    
+    private boolean isRentableChangerCamionEnDoubleCamion(Client destination, List<Client> listeClient){
+        
+//        int distanceSpent =         
+        
+//        return timeSpent < FleetCSV.getOperating_time() * 3 / 4;
+        
+        //Calculer le cout si nouveau vehicule
+        Vehicule v = new Vehicule(myDepot, FleetParser.getCapacite());
+        v.livrer(destination);
+        v.timeSpent = this.timeSpent;
+        v.canTestSubVehicule = true;
+        
+        while(v.chercherPlusProcheParRapportPermiereDestinationEtLivrer(listeClient)){
+        }
+            
+        v.retour();
+        
+        List<Vehicule> listNewVehicule = new ArrayList<>();
+        listNewVehicule.add(v);
+        
+        double coutNewVehicule = SolutionParser.getResultat(listNewVehicule);
+        
+        //Calculer le cout si rajout
+        Vehicule v2 = new Vehicule(myDepot, true, FleetParser.getCapacite());
+        v2.canTestSubVehicule = false;
+        //-1 car on a pas encore fait le retour dépot pour le véhicule courant
+        for(Action a : actionRealisees.subList(1, actionRealisees.size())){
+            v2.livrer((Client)a.destinationLocation);            
+        }
+        for(Action a2 : v.actionRealisees.subList(1, v.actionRealisees.size() -1)){
+            v2.livrer((Client)a2.destinationLocation);
+            if(listeClient.indexOf((Client)a2.destinationLocation) == -1){
+                listeClient.add((Client)a2.destinationLocation);
+            }
+        }
+        v2.retour();
+        
+        List<Vehicule> listNewVehicule2 = new ArrayList<>();
+        listNewVehicule2.add(v2);
+        double coutSiContinuerAvecDouble = SolutionParser.getResultat(listNewVehicule2);
+        
+        return coutSiContinuerAvecDouble < coutNewVehicule;
+        
+//        if(coutSiContinuerAvecDouble < coutNewVehicule){
+//            
+//            
+//            return true;
+//        }
+//        return false;
+//        return timeSpent < FleetCSV.getOperating_time() * 3 / 4;
     }
     
     private boolean isTrainPossibleWithEveryCurrentClients(){
