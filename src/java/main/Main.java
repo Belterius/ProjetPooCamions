@@ -79,13 +79,42 @@ public class Main {
 //        solution2(location,fleet);
 //        solution3(location,fleet);
 //        solution4(location,fleet, nameFiles);
-        solution5(location,fleet, nameFiles);
+//        solution5(location,fleet, nameFiles);
 //        solution6(location,fleet, nameFiles);
 //            loopForSolution(coordinates, fleet, nameFiles);
 //        solution7(location,fleet, nameFiles);
 
+//        JpaFactory myFactory = new JpaFactory();
+//        List<Vehicule> myTrucks = myFactory.getJpaSolutionIndexDao().findAll().get(0).databaseToEntities(location, fleet);
+//        outputSolution(myTrucks, nameFiles);
+        
+        
+
+
+
     }
-    
+    public static void outputSolution(List<Vehicule> myTrucks, String nameFiles){
+        SolutionParser solution = new SolutionParser();
+        int i =1;
+        for(Vehicule myTruck : myTrucks){
+            int j = 1;
+            for(Action action : myTruck.getActionRealisees()){
+                solution.addSolution(new Solution(i, j, action));
+                j++;
+            }
+            i++;
+        }
+        
+        solution.toCsvFinalSolution();
+        JpaFactory factory = new JpaFactory();
+        SolutionIndex sIndex = new SolutionIndex(nameFiles);
+        
+        for(Solution mySol : solution.mySolutions){
+            sIndex.addSolution(mySol);
+        }
+        
+        factory.getJpaSolutionIndexDao().create(sIndex);
+    }
     public static Vehicule ordonnerTour(Vehicule truck,boolean isDoubleCamion,int capacity){
         Depot depot = (Depot) truck.getActionRealisees().get(0).getOrigineLocation();
         List<Client> myClients = new ArrayList<>();
