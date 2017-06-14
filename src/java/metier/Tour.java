@@ -34,7 +34,7 @@ public class Tour {
     
     public Tour(Depot depot, List<Client> clients) {
         this.depot = depot;
-        this.clients = clients;
+        this.clients = new ArrayList(clients);
     }
     
     

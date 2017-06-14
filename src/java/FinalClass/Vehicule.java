@@ -681,9 +681,6 @@ public class Vehicule implements Serializable {
         }
         
         throw new Error("Impossible de calculer le prix si on veut finir tout de suite la tournée");
-        
-        
-    
     }
     
     /**
