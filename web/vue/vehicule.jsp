@@ -47,7 +47,7 @@
                         </thead>
                         <tbody>
                             <c:forEach var="client" items="${requestScope.myVehicule}" varStatus="status">
-                                <tr>
+                                <tr id="${client.getLocation_id()}">
                                     <td>${status.count}</td>
                                     <td><c:out value="${client.getLocation_id()}"/></td>
                                     <td><c:out value="${client.getSwap_body_1_quantity()}"/></td>
