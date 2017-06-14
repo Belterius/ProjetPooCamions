@@ -89,7 +89,8 @@ public class SolutionIndex implements Serializable {
             Vehicule myTruck = new Vehicule(location.getMyDepots().get(0),truckAction.get(0).isSemi_trailer_attached(), fleet.getMyFleets().get(2).getCapacity());
             for(Solution sol : truckAction){
                 if(!sol.getLocation_id().contains("D")){
-                    Client myClient = location.getMyClients().stream().filter(client -> client.getLocation_id().equals(sol.getLocation_id())).findFirst().get();
+//                    Client myClient = location.getMyClients().stream().filter(client -> client.getLocation_id().equals(sol.getLocation_id())).findFirst().get();
+                    Client myClient = getFirstClientFromLocation(location.getMyClients(), sol);           
                     myTruck.livrer(myClient);
                 }
             }
@@ -99,5 +100,13 @@ public class SolutionIndex implements Serializable {
         return myTrucks;
     }
     
+    private Client getFirstClientFromLocation(List<Client> listeClient, Solution sol){
+        for(Client c : listeClient){
+            if(c.getLocation_id().equals(sol.getLocation_id())){
+                return c;
+            }
+        }
+        return null;
+    }
     
 }
