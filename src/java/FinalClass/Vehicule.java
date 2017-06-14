@@ -192,7 +192,7 @@ public class Vehicule implements Serializable {
 //            System.out.println("OK1");
             if(destination.getQuantity() < totalQuantity + FleetParser.getCapacite()&& remorque_2 == null){
 //                System.out.println("OK2");
-                if(timeSpent < FleetCSV.getOperating_time() * 3 / 4){
+                if(timeSpent < FleetCSV.getOperating_time() * 2 / 3){
 //                    System.out.println("OK3");
                     if(isTrainPossibleWithEveryCurrentClients() && destination.getIsTrainPossible() == 1){
                         this.remorque_2 = new Remorque(2, currentEmplacement,true,FleetParser.getCapacite());

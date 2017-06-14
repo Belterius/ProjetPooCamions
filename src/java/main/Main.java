@@ -54,9 +54,9 @@ public class Main {
 //        String nameFiles = "medium_normal";
 //        String nameFiles = "medium_all_without_trailer";
 //        String nameFiles = "medium_all_with_trailer";
-        String nameFiles = "large_normal";
+//        String nameFiles = "large_normal";
 //        String nameFiles = "large_all_without_trailer";
-//        String nameFiles = "large_all_with_trailer";
+        String nameFiles = "large_all_with_trailer"; 
         
         DistanceTimesCoordinatesParser coordinates = new DistanceTimesCoordinatesParser("dima/DistanceTimesCoordinates.csv");
         DistanceTimesDataParser data = new DistanceTimesDataParser("dima/DistanceTimesData.csv");
