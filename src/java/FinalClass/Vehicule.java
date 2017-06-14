@@ -155,6 +155,10 @@ public class Vehicule implements Serializable {
         this.actionRealisees = actionRealisees;
     }
     
+    /**
+     * Démarre le camion
+     * @param startLocation 
+     */
     private void demarrer(Depot startLocation){
         Action start = new Action(currentEmplacement,startLocation, remorque_1, remorque_2, "NONE");
         ajouterAction(start);
@@ -162,6 +166,11 @@ public class Vehicule implements Serializable {
         setCurrentEmplacement(startLocation);
 
     }
+    
+    /**
+     * Ramène le camion au dépot
+     * @return 
+     */
     public boolean retour(){
         Action back = new Action(currentEmplacement, this.myDepot, remorque_1, remorque_2, "NONE");
         ajouterAction(back);
@@ -171,20 +180,20 @@ public class Vehicule implements Serializable {
     }
     
     /**
-     * Livre un client
+     * Livre un client : Teste d'abord si c'est possible de le livrer, si c'est rentable et l'enlève enfin à la liste 
+     * des clients à livrer
      * @param destination
      * @param listClientALivrer
      * @param checkRentability
      */
     public boolean livrer(Client destination, List<Client> listClient, boolean checkRentability){
         
-        
         //Vérifie si le client peut etre livré avec un double remorque ou non ?
         if(destination.getIsTrainPossible()== 0 && remorque_2 != null &&remorque_2.isAttached){
 //            throw new Error("Impossible de livrer ce client avec un semi remorque");
             return false;
         }
-        if(!enoughTime(destination)){//enought time to deliver & comeback
+        if(!enoughTime(destination)){
             return false;
         }
         float totalQuantity = remorque_1.getQuantityLeft() + (remorque_2 != null && remorque_2.isAttached ? remorque_2.getQuantityLeft() : 0);
@@ -219,28 +228,35 @@ public class Vehicule implements Serializable {
         timeSpent += delivery.timeSpent;
         setCurrentEmplacement(destination);
         
-        //Enlever le client de la liste des clients à livrer   
-        
+        //Enlever le client de la liste des clients à livrer
         if(LocationParser.myClients.equals(listClient)){
             listClient.remove(destination);
         }else{
             LocationParser.myClients.remove(destination);
+            //Voir aussi de la liste passée en paramètre si nécessaire
             listClient.remove(destination);
         }
         
-//        System.out.println("Livraison !");
-//        System.out.println("Restant : " + LocationParser.myClients.size());
         return true;
     }
+    
+    /**
+     * Livre uniquement le client ! Vérifie tout de même si c'est possible, mais ne l'énlève pas 
+     * des clients à traiter.
+     * @param destination
+     * @return 
+     */
     public boolean livrer(Client destination){
         //Vérifie si le client peut etre livré avec un double remorque ou non ?
         if(destination.getIsTrainPossible()== 0 && remorque_2 != null &&remorque_2.isAttached){
 //            throw new Error("Impossible de livrer ce client avec un semi remorque");
             return false;
         }
-        if(!enoughTime(destination)){//enought time to deliver & comeback
+        
+        if(!enoughTime(destination)){
             return false;
         }
+        
         float totalQuantity = remorque_1.getQuantityLeft() + (remorque_2 != null && remorque_2.isAttached ? remorque_2.getQuantityLeft() : 0);
         if(destination.getQuantity() > totalQuantity){//enought quantity to deliver at once
             return false;
@@ -255,6 +271,10 @@ public class Vehicule implements Serializable {
         return true;
     }
     
+    /**
+     * Teste si tous les clients livrés avec ce camion peuvent être livré avec un Double Camion
+     * @return 
+     */
     private boolean isTrainPossibleWithEveryCurrentClients(){
         for(Action a : this.actionRealisees){
             if(a.destinationLocation instanceof Client && ((Client)a.destinationLocation).getIsTrainPossible() == 0){
@@ -264,6 +284,10 @@ public class Vehicule implements Serializable {
         return true;
     }
     
+    /**
+     * Dans le cas où le camion se "transforme" en Double camion car jugé rentable, il faut alors répercuté l'information
+     * sur les actions déjà faites.
+     */
     private void devientDoubleCamionSurTouteLaTournee(){
          for(Action a : this.actionRealisees){
             a.id_Second_Remorque = 2;
@@ -272,7 +296,7 @@ public class Vehicule implements Serializable {
     }
     
     /**
-     * Livre un client
+     * Livre un client sans tester la rentabilité ni l'enlever de la liste globale (uniquement utile pour la rentabilité)
      * @param destination
      * @param listClientALivrer
      */
@@ -282,11 +306,14 @@ public class Vehicule implements Serializable {
 //            throw new Error("Impossible de livrer ce client avec un semi remorque");
             return false;
         }
-        if(!enoughTime(destination)){//enought time to deliver & comeback
+        
+        //A-t-on assez de temps pour livrer le client et revenir au dépot ?
+        if(!enoughTime(destination)){
             return false;
         }
         float totalQuantity = remorque_1.getQuantityLeft() + (remorque_2 != null && remorque_2.isAttached ? remorque_2.getQuantityLeft() : 0);
-        if(destination.getQuantity() > totalQuantity){//enought quantity to deliver at once
+        //A-t-on assez de quantité dans les remorques ?
+        if(destination.getQuantity() > totalQuantity){
             return false;
         }
         
@@ -298,6 +325,11 @@ public class Vehicule implements Serializable {
         return true;
     }    
     
+    /**
+     * Fonction non testé / utilisé : pour les swap-locations
+     * Permet de déposer un swap_body
+     * @param destination 
+     */
     public void park(LocationCSV destination){
         if(!destination.getLocation_type().equals("SWAP_LOCATION")){
             throw new Error("Impossible d'effectuer l'action à un non swap location");
@@ -309,6 +341,12 @@ public class Vehicule implements Serializable {
         remorque_2.isAttached = false;
         //TODO ajouter le timeSpent park
     }
+    
+    /**
+     * Fonction non testé / utilisé : pour les swap-locations
+     * Permet de swap un swap_body
+     * @param destination 
+     */
     public void swap(LocationCSV destination){
         if(!destination.getLocation_type().equals("SWAP_LOCATION")){
             throw new Error("Impossible d'effectuer l'action à un non swap location");
@@ -324,6 +362,12 @@ public class Vehicule implements Serializable {
 
         
     }
+    
+    /**
+     * Fonction non testé / utilisé : pour les swap-locations
+     * Permet de récupérer un swap_body
+     * @param destination 
+     */
     public void pickup(LocationCSV destination){
         if(!destination.getLocation_type().equals("SWAP_LOCATION")){
             throw new Error("Impossible d'effectuer l'action à un non swap location");
@@ -336,6 +380,12 @@ public class Vehicule implements Serializable {
         //TODO ajouter le timeSpent pickup
 
     }
+    
+    /**
+     * Fonction non testé / utilisé : pour les swap-locations
+     * Permet d'échanger 2 swap_body
+     * @param destination 
+     */
     public void exchange(LocationCSV destination){
         if(!destination.getLocation_type().equals("SWAP_LOCATION")){
             throw new Error("Impossible d'effectuer l'action à un non swap location");
@@ -396,7 +446,7 @@ public class Vehicule implements Serializable {
     }
    
     /**
-     * Cherche le client le plus loin par rapport à un point donnée
+     * Ordonne la liste passée en paramètre en fonction du client le plus loin par rapport à un point donné
      * @param listeClient
      * @param pointDeDepart
      * @return 
@@ -409,10 +459,7 @@ public class Vehicule implements Serializable {
         Collections.sort(listeClientOrdonnée, new Comparator<Client>() {
             @Override
             public int compare(Client client1, Client client2) {
-                
-//                int tempsDistanceC1 = DistanceTimesDataCSV.getDifferenceTimeBetweenLocationAndClient(pointDeDepart, client1);
-//                int tempsDistanceC2 = DistanceTimesDataCSV.getDifferenceTimeBetweenLocationAndClient(pointDeDepart, client2);
-                
+                                
                 int tempsDistanceC1 = getTempsBetweenTwoLocation(pointDeDepart, client1);
                 int tempsDistanceC2 = getTempsBetweenTwoLocation(pointDeDepart, client2);
                 
@@ -430,7 +477,7 @@ public class Vehicule implements Serializable {
     }
     
     /**
-     * Cherche le client le plus proche par rapport à un point donnée
+     * Ordonne la liste passée en paramètre en fonction du client le plus proche par rapport à un point donné
      * @param listeClient
      * @param pointDeDepart
      * @return 
@@ -444,8 +491,6 @@ public class Vehicule implements Serializable {
             @Override
             public int compare(Client client1, Client client2) {
                 
-//                int tempsDistanceC1 = DistanceTimesDataCSV.getDifferenceTimeBetweenLocationAndClient(pointDeDepart, client1);
-//                int tempsDistanceC2 = DistanceTimesDataCSV.getDifferenceTimeBetweenLocationAndClient(pointDeDepart, client2);
                 int tempsDistanceC1 = getTempsBetweenTwoLocation(pointDeDepart, client1);
                 int tempsDistanceC2 = getTempsBetweenTwoLocation(pointDeDepart, client2);
                 
@@ -490,8 +535,6 @@ public class Vehicule implements Serializable {
                 return true;
             }
         }
-        
-//        System.out.println(listeClient.toString());
         return false;
     }
     
@@ -530,7 +573,7 @@ public class Vehicule implements Serializable {
     }
     
     /**
-     * Cherche le client le plus loin par rapport au depot
+     * Cherche le client le plus loin par rapport au depot et va le livrer
      * @param listeClient
      * @return 
      */
@@ -546,7 +589,7 @@ public class Vehicule implements Serializable {
     }
     
      /**
-     * Cherche le client le plus proche par rapport au depot
+     * Cherche le client le plus proche par rapport au depot et va le livrer
      * @param listeClient
      * @return 
      */
@@ -575,7 +618,11 @@ public class Vehicule implements Serializable {
         return false;
     }
     
-    
+    /**
+     * On va essayer d'ordonner les clients pour commencer par ce d'un côté pour finir de l'autre
+     * @param doubleRemorque
+     * @param sizeRemorque 
+     */
     public void ordonnerTournée(boolean doubleRemorque, float sizeRemorque){
         
         LocationCSV plusLoinPoint = this.getActionRealisees().get(1).destinationLocation;
@@ -616,6 +663,8 @@ public class Vehicule implements Serializable {
         while(chercherPlusProcheParRapportAuCamionEtLivrer(listClientDroite));        
         while(chercherPlusProcheParRapportAuCamionEtLivrer(listClientGauche));
         
+        // Pour simuler on a du enlever les clients de la liste globale, on doit donc les rajouter pour 
+        //continuer normalement le traitement (les clones sont compliqués à mettre en place en JAVA)
         LocationParser.myClients.addAll(listClientDroite);
         LocationParser.myClients.addAll(listClientGauche);
                 
@@ -643,20 +692,11 @@ public class Vehicule implements Serializable {
     /**
      * Cherche le client le plus loin par rapport au depot et le retourne
      * @param listeClient
-     * @return List<Client> Triée par le plus loin d'abord
+     * @return
      */
-    public Client trierPlusLoinParRapportDepot(List<Client> listeClient){
+    public Client chercherClientLePlusLoinUniquement(List<Client> listeClient){
         return chercherClientPlusLoin(listeClient, myDepot).get(0);        
     }
-//    
-//    /**
-//     * Cherche le client le plus proche par rapport au depot et le retourne
-//     * @param listeClient
-//     * @return List<Client> Triée par le plus proche d'abord
-//     */
-//    public void trierPlusProcheParRapportDepotEtLivrer(List<Client> listeClient){
-//        chercherClientPlusProche(listeClient, myDepot);        
-//    }
     
     /**
      * Ajoute une action à la liste des déplacements / actions effectués par le véhicule
@@ -668,21 +708,23 @@ public class Vehicule implements Serializable {
         return true;
     }
     
+    /**
+     * Est-il rentable de livrer le client ou de rentrer au dépot et d'affreter un nouveau camion ?
+     * @param client
+     * @return 
+     */
     private Boolean isRentableLivrerClient(Client client){
         
+        //On imagine que l'on ne va livrer que le client testé
         Vehicule testNewVehicule = new Vehicule(myDepot, client.needDoubleTruck(), FleetParser.getCapacite());
+        //On n'enlève pas de la liste et non n'effectue pas de check pour la rentabilité (sino boucle infinie)
         testNewVehicule.livrerWithoutCheckRentability(client);
         testNewVehicule.retour();
-        //On a remove des clients à livrer dans le livrer (durant le test), on doit donc
-        //le remettre pour la suite
-//        LocationParser.myClients.add(client);
         
-        double resultatNewVehicule = SolutionParser.getResultatForOneVehicule(testNewVehicule);
+        //On teste le résultat pour connaitre son score
+        double resultatNewVehicule = SolutionParser.getResultatForOneVehicule(testNewVehicule);        
         
-//        double resultatBackDirectToDepot = getAmountToBackToDepot();
-//        double resultatDeliverAndBackToDepot = getAmountToDeliverClientAndGoBackToDepot(client) ;
-//        double resultatKeepThisTournee =  resultatDeliverAndBackToDepot - resultatBackDirectToDepot;
-        
+        //On va calculer le coût à combien revient le détour par ce client 
         
         //Si service
         //Distance
@@ -715,41 +757,5 @@ public class Vehicule implements Serializable {
         
         return resultatNewVehicule  + prixDistanceRetourDirectDepot +  prixTempsRetourDirectDepot< prixDistanceTotal + prixTempsTotal ;
     }
-    
-    /**
-     * Théorie : calcul le cout de la tournée si on va livrer le client et on retourne ensuite au depot
-     * @param clientToDeliver
-     * @return 
-     */
-     private double getAmountToDeliverClientAndGoBackToDepot(Client clientToDeliver){
-        try {
-            Vehicule v = (Vehicule) this.clone();
-            v.livrerWithoutCheckRentability(clientToDeliver);
-            v.retour();
-            return SolutionParser.getResultatForOneVehicule(v);
-        } catch (CloneNotSupportedException ex) {
-            Logger.getLogger(Vehicule.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
-        throw new Error("Impossible de calculer le prix si on veut finir tout de suite la tournée");
-    }
-    
-    /**
-     * Théorie : calcul le cout de la tournée si on retourne tout de suite au dépot
-     * @return 
-     */
-    private double getAmountToBackToDepot(){
-        try {
-            Vehicule v = (Vehicule) this.clone();
-            v.retour();
-            
-            return SolutionParser.getResultatForOneVehicule(v);
-        } catch (CloneNotSupportedException ex) {
-            Logger.getLogger(Vehicule.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
-        throw new Error("Impossible de calculer le prix si on veut finir tout de suite la tournée");
-    }
-    
-    
+      
 }

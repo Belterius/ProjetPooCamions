@@ -71,6 +71,11 @@ public class Remorque implements Serializable {
         this.quantityLeft = quantityLeft;
     }
     
+    /**
+     * Enlève la quantité demandée
+     * @param quantity
+     * @return 
+     */
     public float enleverQuantite(float quantity){
         if(quantity > quantityLeft){
             float qtRemoved = quantityLeft;

@@ -40,22 +40,42 @@ public class FleetCSV {
         return type;
     }
 
+    /**
+     * Permet d'avoir la capacité max d'un swap_body
+     * @return 
+     */
     public int getCapacity() {
         return capacity;
     }
 
+    /**
+     * Permet d'avoir le coût en fonction des km d'un swap body
+     * @return 
+     */
     public float getCosts_mu_km() {
         return costs_mu_km;
     }
 
+    /**
+     * Permet d'avoir le coût du conducteur en fonction des heures
+     * @return 
+     */
     public float getCosts_mu_h() {
         return costs_mu_h;
     }
 
+    /**
+     * Permet d'avoir le coût d'usage unique d'une tournée
+     * @return 
+     */
     public float getCosts_mu_usage() {
         return costs_mu_usage;
     }
 
+    /**
+     * Permet d'avoir le temps max pour une tournée
+     * @return 
+     */
     public static float getOperating_time() {
         return operating_time;
     }

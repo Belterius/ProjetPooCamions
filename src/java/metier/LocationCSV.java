@@ -21,7 +21,6 @@ import javax.persistence.Id;
 @Entity
 public abstract class LocationCSV implements Serializable {
     
-    
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Basic(optional = false)

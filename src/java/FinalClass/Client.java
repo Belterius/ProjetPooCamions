@@ -51,8 +51,6 @@ public class Client extends LocationCSV implements Serializable{
      * 
      */
     public Client(String location_type, String location_id, String post_code, String city, int quantity, int nb_possible_train, int service_time, CoordinateCSV coord) {
-    
-        
         this.location_type = location_type;
         this.location_id = location_id;
         this.post_code = post_code;

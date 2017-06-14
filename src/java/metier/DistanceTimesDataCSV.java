@@ -26,17 +26,6 @@ public class DistanceTimesDataCSV {
     
     public int getData(int x, int y){
         return this.matrix[x][y];
-    }
-    
-    /**
-     * Calcul le temps entre une location et le client passé en paramètre
-     * @param pointDeDepart
-     * @param c
-     * @return 
-     */
-    public static int getDifferenceTimeBetweenLocationAndClient(LocationCSV pointDeDepart, Client c ){
-        int temp = DistanceTimesDataCSV.matrix[pointDeDepart.getCoord().getId()][c.coord.getId()];
-        return DistanceTimesDataCSV.matrix[pointDeDepart.getCoord().getId()][c.coord.getId()];
-    }
+    }   
     
 }

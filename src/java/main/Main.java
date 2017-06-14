@@ -36,7 +36,9 @@ import metier.Tour;
  */
 public class Main {
 
-    
+    /*
+    Variables utiles dans le cadre de l'itération de la solution 7
+    */
     public static double step  = 0.001;
     public static double ELOIGNEMENT_DROITE = 0.001;
     public static double best_eloignement = 0;
@@ -48,13 +50,13 @@ public class Main {
      */
     public static void main(String[] args) throws IOException {
                 
-        String nameFiles = "small_normal";
+//        String nameFiles = "small_normal";
 //        String nameFiles = "small_all_without_trailer";
 //        String nameFiles = "small_all_with_trailer";
 //        String nameFiles = "medium_normal";
 //        String nameFiles = "medium_all_without_trailer";
 //        String nameFiles = "medium_all_with_trailer";
-//        String nameFiles = "large_normal";
+        String nameFiles = "large_normal";
 //        String nameFiles = "large_all_without_trailer";
 //        String nameFiles = "large_all_with_trailer"; 
         
@@ -78,15 +80,15 @@ public class Main {
         double totalMontant = 0;
 //        solution1(location,fleet );
 //        solution2(location,fleet);
-//        solution3(location,fleet);
+        solution3(location,fleet);
 //        solution4(location,fleet, nameFiles);
 //        solution6(location,fleet, nameFiles);
 //            loopForSolution(coordinates, fleet, nameFiles);
 //        totalMontant = solution7(location,fleet, nameFiles);
 
         //Le bon algorithme :
-        totalMontant = solution5(location,fleet, nameFiles);
-        System.out.println("TOtal montant : " + totalMontant);
+//        totalMontant = solution5(location,fleet, nameFiles);
+//        System.out.println("TOtal montant : " + totalMontant);
 
 //        JpaFactory myFactory = new JpaFactory();
 //        List<Vehicule> myTrucks = myFactory.getJpaSolutionIndexDao().findAll().get(0).databaseToEntities(location, fleet);
@@ -94,6 +96,11 @@ public class Main {
         
     }
     
+    /**
+     *
+     * @param myTrucks
+     * @param nameFiles 
+     */
     public static void outputSolution(List<Vehicule> myTrucks, String nameFiles){
         SolutionParser solution = new SolutionParser();
         int i =1;
@@ -116,6 +123,14 @@ public class Main {
         
         factory.getJpaSolutionIndexDao().create(sIndex);
     }
+    
+    /**
+     * Ordonne la tournée de sorte à prendre le moins de temps, et le moins de distance possible
+     * @param truck
+     * @param isDoubleCamion
+     * @param capacity
+     * @return 
+     */
     public static Vehicule ordonnerTour(Vehicule truck,boolean isDoubleCamion,int capacity){
         Depot depot = (Depot) truck.getActionRealisees().get(0).getOrigineLocation();
         List<Client> myClients = new ArrayList<>();
@@ -131,10 +146,15 @@ public class Main {
         }    
         myTruck.retour();
         
-        return myTruck;
-        
-        
+        return myTruck;        
     }
+    
+    /**
+     * Ordonne la tournée de sorte à prendre le moins de temps, et le moins de distance possible
+     * @param clients
+     * @param depot
+     * @return 
+     */
     public static List<Client> ordonnerClient(List<Client> clients, Depot depot){
         Tour init = new Tour(depot, clients);
         Tour bestTour = permuteClients(clients, 0, depot);
@@ -142,8 +162,17 @@ public class Main {
         return bestTour.getClients();
     }
     
+    /**
+     * Permet de permuter 2 clients
+     * @param a
+     * @param k
+     * @param d
+     * @return 
+     */
     public static Tour permuteClients(List<Client> a, int k, Depot d) 
     {
+        //On se limite à 11 clients maximum dans la tournée, car ensuite on
+        // explose la puissance de calcul
         if(a.size() > 11)
             return new Tour(d, a);
         
@@ -173,7 +202,12 @@ public class Main {
         return bestTour;
     }
     
-    
+    /**
+     * Dans le cas où on doit itérer sur un paramètre pour tester plusieurs solutions et garder la meilleure
+     * @param coordinates
+     * @param fleet
+     * @param nameFiles 
+     */
     public static void loopForSolution(DistanceTimesCoordinatesParser coordinates, FleetParser fleet, String nameFiles){
         LocationParser location = new LocationParser(nameFiles + "/Locations.csv", coordinates.getCoordinates());
         //Get a copy
@@ -226,7 +260,7 @@ public class Main {
             myTruck = new Vehicule(location.getMyDepots().get(0),isDoubleCamion, fleet.getMyFleets().get(2).getCapacity());
             
             //Avoir le plus loin
-            Client clientLePlusLoin = myTruck.trierPlusLoinParRapportDepot(location.getMyClients());
+            Client clientLePlusLoin = myTruck.chercherClientLePlusLoinUniquement(location.getMyClients());
             if(clientLePlusLoin == null){
                 throw new Error("Plus de livraison possible");
             }
@@ -345,10 +379,7 @@ public class Main {
         
         while(location.getMyClients().size() >0)
         {
-//            boolean requiereDoubleCamion = false;
-//            if(location.getMyClients().stream().filter(client -> client.getQuantity() > fleet.getMyFleets().get(2).getCapacity()).count() > 0){
-//                requiereDoubleCamion = true;
-//            }
+            
             myTruck = new Vehicule(location.getMyDepots().get(0),false, fleet.getMyFleets().get(2).getCapacity());
 
             if(! myTruck.chercherPlusLoinParRapportAuCamionEtLivrer(location.getMyClients())){

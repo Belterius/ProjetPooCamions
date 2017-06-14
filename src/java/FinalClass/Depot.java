@@ -35,6 +35,14 @@ public class Depot extends LocationCSV implements Serializable{
     protected Depot() {
     }
     
+    /**
+     * Constructeur
+     * @param location_type
+     * @param location_id
+     * @param post_code
+     * @param city
+     * @param coord 
+     */
     public Depot(String location_type, String location_id, String post_code, String city, CoordinateCSV coord){
         this.location_type = location_type;
         this.location_id = location_id;

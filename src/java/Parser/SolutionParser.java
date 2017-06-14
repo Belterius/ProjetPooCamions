@@ -21,16 +21,22 @@ import metier.Solution;
  * @author belterius
  */
 public class SolutionParser {
+    
+    /**
+     * Liste des véhicules utilisés pour la solution
+     */
     public List<Vehicule> myVehicules;
+    /**
+     * Liste des tournées sous forme de fichier solution
+     */
     public List<Solution> mySolutions;
     
     public SolutionParser(){
         myVehicules = new ArrayList<Vehicule>();        
         mySolutions = new ArrayList<Solution>();
-
     }
-    public SolutionParser(List<Vehicule> mySolutions){
-        this.myVehicules = mySolutions;
+    public SolutionParser(List<Vehicule> myVehicules){
+        this.myVehicules = myVehicules;
     }
     
     public void addSolution(Vehicule s){
@@ -40,7 +46,9 @@ public class SolutionParser {
         this.mySolutions.add(s);
     }
     
-    
+    /**
+     * Permet de transformer l'objet
+     */
     public void toCsv() {     
         FileWriter writer = null;
         try {
@@ -122,11 +130,14 @@ public class SolutionParser {
             }
         }
     }
-        
+
+    /**
+     * Retourne le résultat d'une solution (avec plusieurs véhicules)
+     * @param listVehicule
+     * @return 
+     */
     public static float getResultat(List<Vehicule> listVehicule) {
-        
-        float totalMontant = 0;
-        
+                
         int nbSwap = 0;
         int nbTruck = 0;
         int distanceTruck = 0;
@@ -154,6 +165,11 @@ public class SolutionParser {
         return getTotalMontant(nbSwap,nbTruck,distanceTruck,distanceSemiTrailer,duree );
     }
     
+    /**
+     * Retourne le résultat d'une tournée
+     * @param vehicule
+     * @return 
+     */
     public static float getResultatForOneVehicule(Vehicule vehicule){
                
         float totalMontant = 0;

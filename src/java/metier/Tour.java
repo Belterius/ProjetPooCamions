@@ -15,8 +15,8 @@ import java.util.List;
  * @author belterius
  */
 public class Tour {
-    List<Client> clients = new ArrayList<>();
-    Depot depot;
+    private List<Client> clients = new ArrayList<>();
+    private Depot depot;
 
     public List<Client> getClients() {
         return clients;
@@ -26,18 +26,28 @@ public class Tour {
         return depot;
     }
 
+    /**
+     * Constructor par défaut
+     */
     public Tour() {
         this.depot = null;
         this.clients = null;
     }
 
-    
+    /**
+     * Constructor
+     * @param depot
+     * @param clients 
+     */
     public Tour(Depot depot, List<Client> clients) {
         this.depot = depot;
         this.clients = new ArrayList(clients);
     }
     
-    
+    /**
+     * Calcule le temps d'une tournée
+     * @return 
+     */
     public long getTempsTour(){
         if(clients == null)
             return Long.MAX_VALUE;

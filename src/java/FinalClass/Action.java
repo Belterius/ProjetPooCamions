@@ -81,7 +81,7 @@ public class Action implements Serializable {
     }
 
     /**
-     * 
+     * Constructeur
      * @param destinationLocation
      * @param remoqueEmplacement1
      * @param remoqueEmplacement2
@@ -104,6 +104,11 @@ public class Action implements Serializable {
         
     }
 
+    /**
+     * Enlève la quantité nécessaire pour livrer le client des remorques (si on a 2 remorques)
+     * @param rq1
+     * @param rq2 
+     */
     public void livrerClient(Remorque rq1, Remorque rq2) {
         if(destinationLocation instanceof Client){
             float quantitytToRemove = ((Client)destinationLocation).getQuantity();
@@ -142,6 +147,12 @@ public class Action implements Serializable {
         addTimeSpent();
         addDistanceSpent();
     }
+    
+    /**
+     * Enlève la quantité nécessaire pour livrer le client des remorques (si on a 1 remorque)
+     * @param rq1
+     * @param rq2 
+     */
     public void livrerClient(Remorque rq1) {
         if(destinationLocation instanceof Client){
             float quantitytToRemove = ((Client)destinationLocation).getQuantity();
@@ -164,16 +175,10 @@ public class Action implements Serializable {
     public String toString() {
         return String.format("%s;%s;%s;%s;%s;%s;%s;%s",this.destinationLocation.getLocation_id(), this.destinationLocation.getLocation_type(), this.semi_Trailer_Attached ? 1 : 0, this.id_First_Remorque, this.id_Second_Remorque, swap_Action, quantity_Swap_Body_1, quantity_Swap_Body_2);
     }
-//    public void addTimeSpent(){
-//        try{
-//            if(destinationLocation instanceof Client)
-//                timeSpent =DistanceTimesDataCSV.matrix[2*origineLocation.getCoord().getId()+1][destinationLocation.getCoord().getId()] + ((Client)destinationLocation).getService_time();
-//            else
-//                timeSpent =DistanceTimesDataCSV.matrix[2*origineLocation.getCoord().getId()+1][destinationLocation.getCoord().getId()];
-//        }catch(Exception e){//Pour l'init
-//            System.out.println(e);
-//        }
-//    }
+
+    /**
+     * Ajoute le temps mis pour l'action
+     */
     public void addTimeSpent(){
         try{
             int i = 2*destinationLocation.getCoord().getId()+1;
@@ -191,6 +196,9 @@ public class Action implements Serializable {
         }
     }
     
+    /**
+     * Ajoute la distance mise pour l'action 
+     */
     private void addDistanceSpent(){
         try{
             int i = 2*destinationLocation.getCoord().getId();
